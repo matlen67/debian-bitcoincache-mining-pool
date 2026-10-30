@@ -545,3 +545,4 @@ async function updateBlocks() {
 // Blockhistorie separat alle 60 Sekunden aktualisieren
 updateBlocks();
 setInterval(updateBlocks, 60000);
+
