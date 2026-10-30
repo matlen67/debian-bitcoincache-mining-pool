@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Stage 05 — dashboard environment and systemd unit (development).\n# Correct order: run this BEFORE 04-configure-payout.sh so PAYOUT_SCRIPT stays configured.
+# Stage 05 — dashboard environment and systemd unit (development).
+# Correct order: run this BEFORE 04-configure-payout.sh so PAYOUT_SCRIPT stays configured.
 # Does not start services; only use on a fresh test VM after original files were imported.
 set -Eeuo pipefail
 umask 077
