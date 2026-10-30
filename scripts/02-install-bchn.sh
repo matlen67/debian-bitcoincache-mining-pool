@@ -85,6 +85,11 @@ EOF
 sudo install -o root -g root -m 644 "$TMP/bchn.service" /etc/systemd/system/bchn.service
 sudo systemctl daemon-reload
 echo "BCHN installiert. Start erfolgt nur nach ausdrücklicher Bestätigung."
+echo "Optional: Bereits gesicherte Blockchain von einem lokal eingebundenen Archiv übernehmen."
+read -r -p 'Pfad zur bchn-blockchain.tar.gz (Enter = neu synchronisieren): ' BACKUP_ARCHIVE
+if [[ -n "$BACKUP_ARCHIVE" ]]; then
+  bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/09-restore-blockchain.sh" "$BACKUP_ARCHIVE"
+fi
 read -r -p 'BCHN jetzt aktivieren und Blockchain-Synchronisierung starten? [j/N] ' START
 if [[ "$START" =~ ^[jJyY]$ ]]; then
   sudo systemctl enable --now bchn.service
