@@ -41,4 +41,16 @@ if ! sudo grep -q '^SupplementaryGroups=bchn$' "$DASH_SERVICE"; then
 fi
 sudo systemctl daemon-reload
 echo "Migration abgeschlossen. setup-pool.sh startet die Dienste nach dem Health-Check."
-echo "Der alte pooladmin-Account wird nicht automatisch gelöscht."
+# Remove the obsolete dedicated account only if no process is still running as it.
+if id pooladmin >/dev/null 2>&1; then
+  if pgrep -u pooladmin >/dev/null 2>&1; then
+    echo "HINWEIS: pooladmin hat noch laufende Prozesse und wird nicht gelöscht."
+  else
+    sudo userdel pooladmin
+    if getent group pooladmin >/dev/null 2>&1; then
+      sudo gpasswd -d bchn pooladmin >/dev/null 2>&1 || true
+      sudo groupdel pooladmin 2>/dev/null || true
+    fi
+    echo "Alter pooladmin-Account entfernt."
+  fi
+fi
