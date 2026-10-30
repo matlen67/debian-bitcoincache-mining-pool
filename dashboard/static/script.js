@@ -38,27 +38,27 @@ function formatPoolUptime(seconds) {
   const minutes = totalMinutes % 60;
 
   if (days > 0) {
-    return \`\${days} \${days === 1 ? 'Tag' : 'Tage'} \` +
-           \`\${hours} Std. \${String(minutes).padStart(2, '0')} Min.\`;
+    return `${days} ${days === 1 ? 'Tag' : 'Tage'} ` +
+           `${hours} Std. ${String(minutes).padStart(2, '0')} Min.`;
   }
 
   if (hours > 0) {
-    return \`\${hours} Std. \${String(minutes).padStart(2, '0')} Min.\`;
+    return `${hours} Std. ${String(minutes).padStart(2, '0')} Min.`;
   }
 
-  return \`\${minutes} Min.\`;
+  return `${minutes} Min.`;
 }
 
 function formatHashrate(ghs) {
   if (!Number.isFinite(ghs)) return '—';
-  if (ghs >= 1000000) return \`\${decimal(ghs / 1000000)} PH/s\`;
-  if (ghs >= 1000) return \`\${decimal(ghs / 1000)} TH/s\`;
-  return \`\${decimal(ghs)} GH/s\`;
+  if (ghs >= 1000000) return `${decimal(ghs / 1000000)} PH/s`;
+  if (ghs >= 1000) return `${decimal(ghs / 1000)} TH/s`;
+  return `${decimal(ghs)} GH/s`;
 }
 
 function formatNetworkDifficulty(diff) {
   if (!Number.isFinite(diff)) return '—';
-  return \`\${decimal(diff / 1e9)} G\`;
+  return `${decimal(diff / 1e9)} G`;
 }
 
 function formatBestDifficulty(diff) {
@@ -77,7 +77,7 @@ function formatBestDifficulty(diff) {
 
   for (const item of units) {
     if (diff >= item.value) {
-      return \`\${decimal(diff / item.value)} \${item.unit}\`;
+      return `${decimal(diff / item.value)} ${item.unit}`;
     }
   }
 
@@ -96,12 +96,12 @@ function formatRejectedDifficulty(accepted, rejected) {
   const total = accepted + rejected;
 
   if (!Number.isFinite(total) || total <= 0) {
-    return \`\${rejectedText} (0,00 %)\`;
+    return `${rejectedText} (0,00 %)`;
   }
 
   const percentage = (rejected / total) * 100;
 
-  return \`\${rejectedText} (\${decimal(percentage, 2)} %)\`;
+  return `${rejectedText} (${decimal(percentage, 2)} %)`;
 }
 
 // =========================================================
@@ -123,7 +123,7 @@ function calculateBlockChance(ghs, difficulty) {
 
   const probability = -Math.expm1(-expectedBlocks) * 100;
 
-  return \`\${decimal(probability, 4)} %\`;
+  return `${decimal(probability, 4)} %`;
 }
 
 // =========================================================
@@ -257,8 +257,8 @@ function updateMiners(mining) {
   ).length;
 
   countElement.textContent =
-    \`\${connectedMiners} \${connectedMiners === 1 ? 'Miner' : 'Miner'} verbunden \` +
-    \`(\${stratumConnections} Stratum)\`;
+    `${connectedMiners} ${connectedMiners === 1 ? 'Miner' : 'Miner'} verbunden ` +
+    `(${stratumConnections} Stratum)`;
 
   if (visibleMiners === 0) {
     const row = tbody.insertRow();
@@ -277,7 +277,7 @@ function updateMiners(mining) {
 async function updateStatus() {
   try {
     const response = await fetch('/api/status', { cache: 'no-store' });
-    if (!response.ok) throw new Error(\`HTTP \${response.status}\`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
     const node = data.node;
@@ -303,9 +303,9 @@ async function updateStatus() {
 
     $('progress-text').textContent = pct === null
       ? '—'
-      : \`\${decimal(pct)} %\`;
+      : `${decimal(pct)} %`;
 
-    $('progress-bar').style.width = pct === null ? '0%' : \`\${pct}%\`;
+    $('progress-bar').style.width = pct === null ? '0%' : `${pct}%`;
 
     const state = $('node-status');
 
@@ -415,13 +415,13 @@ async function updateStatus() {
     // =========================================================
 
     $('node-error').textContent = node.error
-      ? \`BCHN-Abfrage fehlgeschlagen: \${node.error}\`
+      ? `BCHN-Abfrage fehlgeschlagen: ${node.error}`
       : mining.online
         ? 'CKPool ist online und liefert Mining-Daten.'
         : 'CKPool ist derzeit offline.';
 
     $('updated').textContent =
-      \`Letztes Update: \${new Date(data.updated_at).toLocaleTimeString('de-DE')}\`;
+      `Letztes Update: ${new Date(data.updated_at).toLocaleTimeString('de-DE')}`;
 
   } catch (err) {
     $('node-status').className = 'status offline';
@@ -455,7 +455,7 @@ async function updateBlocks() {
     });
 
     if (!response.ok) {
-      throw new Error(\`HTTP \${response.status}\`);
+      throw new Error(`HTTP ${response.status}`);
     }
 
     const data = await response.json();
