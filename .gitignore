@@ -1,0 +1,26 @@
+# Secrets and local configuration
+*.env
+.env
+.env.*
+!.env.example
+bitcoin.conf
+bchsolo.conf
+*.cookie
+*.pem
+*.key
+*.wallet
+secrets/
+
+# Runtime data and logs
+logs/
+*.log
+__pycache__/
+*.pyc
+.venv/
+venv/
+.installer-state/
+
+# Downloaded binaries and archives
+*.tar.gz
+*.zip
+*.deb
