@@ -1,27 +1,52 @@
-# Bitcoin Cash Mainnet Solo Pool — Installer (Entwicklung)
+# Bitcoin Cash Mainnet Solo Mining Pool — Installer v1 (Teststand)
 
-**Branch `installer-v1`: noch kein vollständiger Installer.** Ausschließlich auf einer frischen Test-VM verwenden, niemals auf dem produktiven Pool.
+**Nur auf einer frischen Debian-13-(Trixie)-Test-VM verwenden.** Niemals auf dem produktiven Pool `debbch`. Der Branch `main` bleibt unverändert.
+
+## Status
+
+Der Ablauf ist implementiert, aber **noch nicht Ende-zu-Ende getestet**. Die Originaldateien aus dem Referenz-ZIP müssen vor der Installation ins Repository importiert werden. Die BCHN-Release-Signatur, der CKPool-Referenzcommit und das tatsächliche Miner-/Auszahlungsverhalten sind vor produktiver Freigabe zu verifizieren.
 
 ## Voraussetzungen
 
-Debian 13 (Trixie), ohne Desktop-Umgebung, mit SSH und einem normalen Benutzer mit funktionierendem `sudo`. Feste LAN-IP und eine eigene **BCH Mainnet Legacy-P2PKH-Adresse** (beginnt mit `1`).
+Debian 13 x86_64 ohne Desktop, SSH, normaler Benutzer mit `sudo`, feste LAN-IP, eigene **BCH-Mainnet-Legacy-P2PKH-Adresse** (beginnt mit `1`). Kein bereits installierter BCHN-/CKPool-/Dashboard-Dienst.
 
-## Aktueller Funktionsumfang
+## Originaldateien importieren
 
-`install.sh` prüft Betriebssystem, sudo und bereits vorhandene Pool-Konfigurationen. Anschließend fragt es die BCH-Legacy-Adresse und die Server-IP ab und erzeugt ein zufälliges RPC-Passwort. Die Angaben werden ausschließlich lokal unter `~/.config/bch-solo-installer/setup.env` mit Dateirechten 0600 gespeichert. **Es werden noch keine Programme installiert und keine Dienste gestartet.** Die Eingabeprüfung der Adresse ist vorläufig; die endgültige Validierung durch BCHN folgt in einer späteren Ausbaustufe.
+Das getestete Paket `bch-mainnet-installationspaket_v2.zip` enthält sechs Dashboard-Dateien, `bch-ckpool-mainnet.patch` und die Referenzanleitung. Das Importskript akzeptiert auch das umstrukturierte `bch-installer-v1-originaldateien.zip`, prüft die SHA256-Werte und überschreibt keine Dateien.
+
+Auf einem lokalen Rechner mit Git-Zugang:
 
 ```bash
 git clone --branch installer-v1 https://github.com/matlen67/debian-bitcoincache-mining-pool.git
 cd debian-bitcoincache-mining-pool
-bash install.sh
+python3 scripts/import-package.py /pfad/zum/bch-mainnet-installationspaket_v2.zip
+git status --short
+# Dateien prüfen, besonders keine Zugangsdaten committen
+git add dashboard patches docs
+git commit -m "Add tested original CKPool patch and dashboard assets"
+git push origin installer-v1
 ```
 
-## Geplante Ausbaustufen
+Die Originalanleitung in `docs/INSTALLATIONSANLEITUNG-v2.md` ist bereits versioniert; deshalb **vor dem Import** diese Datei vorübergehend entfernen oder die importierte Anleitung im ZIP überspringen. Ohne eine entsprechende Anpassung bricht der sichere Importer bei bereits vorhandenen Zieldateien absichtlich ab.
 
-- Original-CKPool-Patch und Dashboard aus dem getesteten Installationspaket einbinden
-- BCHN 29.2.0 mit Prüfsummen-/Versionsprüfung installieren und Mainnet-RPC konfigurieren
-- CKPool auf einen geprüften Commit festlegen, BCH-Patch anwenden und bauen
-- BCH-Adresse mit `validateaddress` prüfen und `scriptPubKey` im Dashboard konfigurieren
-- systemd-Dienste, Synchronisationsprüfung und Health-Checks ergänzen
+## Installation auf neuer Test-VM
 
-**Sicherheit:** RPC-Zugangsdaten, Wallet-Seeds, private Schlüssel, `bitcoin.conf` und `bchsolo.conf` niemals nach GitHub committen. Bestehende Installationen werden nicht automatisch überschrieben.
+Erst nach vollständigem Import der Originaldateien:
+
+```bash
+git clone --branch installer-v1 https://github.com/matlen67/debian-bitcoincache-mining-pool.git
+cd debian-bitcoincache-mining-pool
+bash setup-pool.sh
+```
+
+`setup-pool.sh` führt die Schritte kontrolliert aus und **stoppt während der BCHN-Synchronisierung**. Sobald BCHN vollständig synchronisiert ist, denselben Befehl erneut ausführen. Er startet CKPool und Dashboard **nicht automatisch**.
+
+Für einzelne Schritte: `bash run-stages.sh --help`. Read-only-Prüfung: `bash scripts/07-health-check.sh`.
+
+## Sicherheits- und Testgrenzen
+
+- BCHN-Download wird gegen die SHA256-Prüfsumme der Referenzinstallation geprüft, **nicht** gegen eine unabhängig verifizierte Herausgebersignatur.
+- CKPool-Patch wird nur bei erfolgreichem `git apply --check` angewendet; Commit-Kompatibilität ist auf einer neuen VM noch nicht nachgewiesen.
+- Dashboard bietet keine Anmeldung: ausschließlich in einem vertrauenswürdigen LAN betreiben.
+- `validateaddress` und das automatisch ermittelte `scriptPubKey` ersetzen keine Prüfung einer echten Solo-Coinbase und einer Miner-Share.
+- RPC-Passwörter, private Schlüssel, Wallet-Seeds und erzeugte `bitcoin.conf`/`bchsolo.conf` niemals ins Repository committen.
