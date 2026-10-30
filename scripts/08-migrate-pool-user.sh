@@ -10,7 +10,7 @@ BASE=/opt/bch-solo-pool
 NODE_CONF=/var/lib/bch-node/bitcoin.conf
 CK_SERVICE=/etc/systemd/system/bch-ckpool.service
 DASH_SERVICE=/etc/systemd/system/bch-dashboard.service
-[[ -d "$BASE" && -f "$NODE_CONF" ]] || { echo "Pool oder BCHN-Konfiguration fehlt." >&2; exit 1; }
+sudo test -d "$BASE" && sudo test -f "$NODE_CONF" || { echo "Pool oder BCHN-Konfiguration fehlt." >&2; exit 1; }
 id bchn >/dev/null
 # Only migrate an installed pool. Fresh installs already have the correct owner.
 if [[ ! -f "$CK_SERVICE" || ! -f "$DASH_SERVICE" ]]; then
