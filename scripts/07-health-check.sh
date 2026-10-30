@@ -36,10 +36,10 @@ except (ValueError, KeyError, TypeError) as e:
     sys.exit(1)
 PY
 for path in /opt/bch-solo-pool/ckpool/src/ckpool /opt/bch-solo-pool/ckpool/bchsolo.conf /opt/bch-solo-pool/webinterface/bch-solo-dashboard/app.py /opt/bch-solo-pool/webinterface/venv/bin/python; do
-  if [[ -e "$path" ]]; then ok "$path vorhanden"; else bad "$path fehlt"; fi
+  if sudo test -e "$path"; then ok "$path vorhanden"; else bad "$path fehlt"; fi
 done
-if [[ -f /opt/bch-solo-pool/ckpool/bchsolo.conf ]]; then
-  mode="$(stat -c %a /opt/bch-solo-pool/ckpool/bchsolo.conf)"
+if sudo test -f /opt/bch-solo-pool/ckpool/bchsolo.conf; then
+  mode="$(sudo stat -c %a /opt/bch-solo-pool/ckpool/bchsolo.conf)"
   [[ "$mode" == 600 ]] && ok "CKPool-Konfiguration geschützt (0600)" || bad "CKPool-Konfiguration hat Dateimodus $mode statt 600"
 fi
 if sudo systemctl is-active --quiet bch-ckpool.service; then
