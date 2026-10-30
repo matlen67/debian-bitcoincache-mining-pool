@@ -6,7 +6,7 @@ Automatisierte **Testinstallation** für eine neue Debian-13-(Trixie)-VM auf x86
 
 ## Voraussetzungen
 
-- Debian 13 ohne Desktop, SSH-Zugang, normaler Benutzer mit `sudo`
+- Debian 13 ohne Desktop, SSH-Zugang; ein normaler Benutzer mit eingerichteten `sudo`-Rechten (bei Minimalinstallation ggf. erst einrichten)
 - Feste IPv4-Adresse im vertrauenswürdigen LAN
 - Eigene **Bitcoin-Cash-Mainnet-Legacy-P2PKH-Adresse** (beginnt mit `1`); **niemals Seed oder privaten Schlüssel eingeben**
 - Mindestens ca. 4 GB RAM empfohlen, ausreichend Speicherplatz und Internetverbindung; der BCHN-Download benötigt Zeit
@@ -14,11 +14,21 @@ Automatisierte **Testinstallation** für eine neue Debian-13-(Trixie)-VM auf x86
 
 ## Kurzanleitung
 
-Nach der Debian-Installation auf der **neuen Test-VM** anmelden:
+Nach der Debian-Installation auf der **neuen Test-VM** anmelden. **Falls `sudo` noch nicht installiert ist**, zunächst als `root` anmelden (z. B. mit `su -`) und `sudo` installieren sowie dem eigenen Benutzer die Berechtigung geben:
+
+```bash
+su -
+apt-get update
+apt-get install -y sudo
+usermod -aG sudo DEIN_BENUTZERNAME
+exit
+```
+
+Danach **neu anmelden** (damit die Gruppenzugehörigkeit aktiv wird) und mit dem normalen Benutzer fortfahren:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y git python3 openssl iproute2 sudo
+sudo apt-get install -y git python3 openssl iproute2
 git clone --branch installer-v1 https://github.com/matlen67/debian-bitcoincache-mining-pool.git
 cd debian-bitcoincache-mining-pool
 bash setup-pool.sh
