@@ -1,0 +1,49 @@
+name: Installer static checks
+on:
+  push:
+    branches: [installer-v1]
+  pull_request:
+    branches: [main, installer-v1]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell syntax
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            bash -n "$file"
+          done < <(find . -name '*.sh' -type f -print0)
+      - name: Check Python syntax
+        run: |
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          for path in sorted(Path('.').rglob('*.py')):
+              ast.parse(path.read_text(encoding='utf-8'), filename=str(path))
+              print('OK', path)
+          PY
+      - name: Check JavaScript syntax
+        run: node --check dashboard/static/script.js
+      - name: Verify original files SHA256
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import runpy
+          from pathlib import Path
+          mod = runpy.run_path('scripts/import-package.py')
+          expected = mod['SHA256']
+          dest = mod['DEST']
+          for name, digest in expected.items():
+              path = Path(dest.get(name, name))
+              actual = hashlib.sha256(path.read_bytes()).hexdigest()
+              if actual != digest:
+                  raise SystemExit(f'SHA256 mismatch: {path}')
+              print('OK', path)
+          PY
