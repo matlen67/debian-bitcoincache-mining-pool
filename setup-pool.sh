@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Controlled installer for a NEW Debian 13 test VM.
+# Controlled installer for a fresh Debian 13 VM or existing synced BCHN.
 # No automatic CKPool/dashboard startup; rerun after BCHN synchronization.
 set -Eeuo pipefail
 die() { echo "FEHLER: $*" >&2; exit 1; }
 [[ "$(id -u)" -ne 0 ]] || die "Nicht als root ausführen."
+[[ $# -le 1 ]] || die "Verwendung: bash setup-pool.sh [--reuse-bchn]"
+MODE="${1:-}"
+[[ -z "$MODE" || "$MODE" == "--reuse-bchn" ]] || die "Unbekannte Option: $MODE"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [[ -f "$ROOT/install.sh" ]] || die "install.sh fehlt."
 [[ -f "$ROOT/docs/INSTALLATIONSANLEITUNG-v2.md" ]] || die "Originalanleitung fehlt."
@@ -22,11 +25,19 @@ for name, digest in mod["SHA256"].items():
         raise SystemExit("SHA256 stimmt nicht: " + str(path))
 print("Alle acht Originaldateien geprüft.")
 PY
-if [[ ! -f "$HOME/.config/bch-solo-installer/setup.env" ]]; then
-  bash "$ROOT/install.sh"
+if [[ "$MODE" == "--reuse-bchn" ]]; then
+  [[ -f /etc/systemd/system/bchn.service ]] || die "Vorhandene BCHN fehlt."
+  if [[ ! -f "$HOME/.config/bch-solo-installer/setup.env" ]]; then
+    bash "$ROOT/scripts/01-reuse-existing-bchn.sh"
+  fi
+else
+  if [[ ! -f "$HOME/.config/bch-solo-installer/setup.env" ]]; then
+    bash "$ROOT/install.sh"
+  fi
 fi
 [[ -f "$HOME/.config/bch-solo-installer/setup.env" ]] || die "Setup nicht abgeschlossen."
 if [[ ! -f /etc/systemd/system/bchn.service ]]; then
+  [[ "$MODE" != "--reuse-bchn" ]] || die "BCHN fehlt im Wiederverwendungsmodus."
   bash "$ROOT/scripts/02-install-bchn.sh"
 fi
 if ! sudo systemctl is-active --quiet bchn.service; then
