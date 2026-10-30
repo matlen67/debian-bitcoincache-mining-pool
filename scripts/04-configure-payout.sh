@@ -22,7 +22,7 @@ PY
 CKDIR=/opt/bch-solo-pool/ckpool
 DASH=/opt/bch-solo-pool/webinterface/bch-solo-dashboard
 [[ -x "$CKDIR/src/ckpool" ]] || fail "CKPool ist noch nicht gebaut."
-[[ -f "$DASH/block_history.py" ]] || fail "Dashboard-Originaldateien fehlen."
+sudo test -f "$DASH/block_history.py" || fail "Dashboard-Originaldateien fehlen."
 [[ ! -e "$CKDIR/bchsolo.conf" ]] || fail "bchsolo.conf existiert bereits; kein Überschreiben."
 id pooladmin >/dev/null 2>&1 || fail "pooladmin fehlt."
 id bchn >/dev/null 2>&1 || fail "bchn fehlt."
@@ -50,7 +50,10 @@ with open(path,"x") as f: json.dump(cfg,f,indent=2);f.write("\n")
 PY
 # Do not modify the original dashboard file in place until its expected
 # reference constant has been found exactly once.
-python3 - "$DASH/block_history.py" "$TMP/block_history.py" "$SCRIPT" <<'PY'
+# Dashboard belongs to bchn (directory 0750, file 0640).
+# Read via sudo into a private temporary file owned by the invoking user.
+sudo install -o "$(id -un)" -g "$(id -gn)" -m 600 "$DASH/block_history.py" "$TMP/original-block_history.py"
+python3 - "$TMP/original-block_history.py" "$TMP/block_history.py" "$SCRIPT" <<'PY'
 import pathlib,re,sys
 src=pathlib.Path(sys.argv[1]).read_text()
 pattern=r'PAYOUT_SCRIPT\s*=\s*\(\s*"[0-9a-fA-F]{50}"\s*\)'
