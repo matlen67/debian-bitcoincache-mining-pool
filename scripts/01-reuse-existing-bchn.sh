@@ -24,7 +24,9 @@ sudo systemctl is-active --quiet bchn.service || die "BCHN läuft nicht."
 sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf getblockchaininfo | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["chain"]=="main" and d["initialblockdownload"] is False and d["blocks"]>=d["headers"]' || die "BCHN ist nicht synchronisiert."
 STATE="$HOME/.config/bch-solo-installer"
 [[ ! -e "$STATE/setup.env" ]] || die "setup.env existiert bereits; wird nicht überschrieben."
-read -r -p 'BCH Legacy-Auszahlungsadresse (beginnt mit 1): ' ADDRESS
+echo 'Hinweis: Im CKPool-Solo-Modus (-B) bestimmt jeder Miner seine Auszahlung über die BCH-Adresse im Stratum-Benutzernamen.'
+echo 'Die folgende Adresse ist eine Konfigurations-/Dashboard-Referenz, keine feste Auszahlung für alle Miner.'
+read -r -p 'BCH Legacy-Referenzadresse (beginnt mit 1): ' ADDRESS
 [[ "$ADDRESS" =~ ^1[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{25,34}$ ]] || die "Ungültiges Adressformat."
 read -r -p 'Feste Server-LAN-IPv4: ' SERVER_IP
 python3 - "$SERVER_IP" <<'PY' || die "Ungültige IPv4."
