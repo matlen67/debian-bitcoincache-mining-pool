@@ -10,6 +10,18 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 for f in patches/bch-ckpool-mainnet.patch dashboard/app.py dashboard/ckpool_api.py dashboard/block_history.py dashboard/templates/index.html dashboard/static/script.js dashboard/static/style.css; do
   [[ -s "$ROOT/$f" ]] || die "Originaldatei fehlt: $f. Vorher Original-ZIP importieren."
 done
+# Verify that every original source file matches the tested reference package.
+python3 - "$ROOT" <<'PY' || die "Originaldateien beschädigt oder verändert."
+import hashlib, runpy, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+mod = runpy.run_path(str(root / "scripts/import-package.py"))
+for name, digest in mod["SHA256"].items():
+    path = root / mod["DEST"].get(name, name)
+    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+        raise SystemExit("SHA256 stimmt nicht: " + str(path))
+print("Alle acht Originaldateien geprüft.")
+PY
 if [[ ! -f "$HOME/.config/bch-solo-installer/setup.env" ]]; then
   bash "$ROOT/install.sh"
 fi
