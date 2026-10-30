@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stage 05 — dashboard environment and systemd unit (development).
+# Stage 05 — dashboard environment and systemd unit (development).\n# Correct order: run this BEFORE 04-configure-payout.sh so PAYOUT_SCRIPT stays configured.
 # Does not start services; only use on a fresh test VM after original files were imported.
 set -Eeuo pipefail
 umask 077
@@ -27,7 +27,7 @@ for f in app.py ckpool_api.py block_history.py templates/index.html static/scrip
   [[ -s "$SRC/$f" ]] || die "Original-Dashboarddatei fehlt: $SRC/$f"
 done
 [[ -x /usr/local/bin/bitcoin-cli ]] || die "BCHN fehlt."
-[[ -f /opt/bch-solo-pool/ckpool/bchsolo.conf ]] || die "CKPool-Konfiguration fehlt. Erst Stufe 04 ausführen."
+[[ -x /opt/bch-solo-pool/ckpool/src/ckpool ]] || die "CKPool-Binary fehlt. Erst Stufe 03 ausführen."
 [[ ! -e "$DEST" && ! -e "$VENV" && ! -e "$SERVICE" ]] || die "Dashboard ist bereits installiert; kein Überschreiben."
 id bchn >/dev/null 2>&1 || die "Benutzer bchn fehlt."
 command -v python3 >/dev/null || die "Python fehlt."
@@ -72,4 +72,4 @@ sudo install -o root -g root -m 644 "$TMP" "$SERVICE"
 sudo systemctl daemon-reload
 echo "Dashboard-Dateien, Flask und systemd-Dienst installiert, aber NICHT gestartet."
 echo "WICHTIG: Dashboard nur im vertrauenswürdigen LAN betreiben (Flask ohne Authentifizierung)."
-echo "Nächster Schritt: CKPool-Service und Ende-zu-Ende-Prüfung."
+echo "Nächster Schritt: 04-configure-payout.sh, danach CKPool-Service und Ende-zu-Ende-Prüfung."
