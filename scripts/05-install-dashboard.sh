@@ -130,7 +130,7 @@ User=$(id -un)
 Group=$(id -gn)
 SupplementaryGroups=bchn
 WorkingDirectory=$DEST
-Environment=DASHBOARD_HOST=$SERVER_IP
+Environment=DASHBOARD_HOST=0.0.0.0
 Environment=STRATUM_HOST=$SERVER_IP
 Environment=STRATUM_PORT=3333
 Environment=BCH_DATADIR=/var/lib/bch-node
@@ -145,6 +145,6 @@ WantedBy=multi-user.target
 EOF
 sudo install -o root -g root -m 644 "$TMP" "$SERVICE"
 sudo systemctl daemon-reload
-echo "Dashboard-Dateien, Flask und systemd-Dienst installiert, aber NICHT gestartet."
+echo "Dashboard-Dateien, Flask und systemd-Dienst installiert, aber NICHT gestartet."\necho "Dashboard bindet auf 0.0.0.0:8080 (nur im vertrauenswürdigen LAN betreiben)."
 echo "WICHTIG: Dashboard nur im vertrauenswürdigen LAN betreiben (Flask ohne Authentifizierung)."
 echo "Nächster Schritt: 04-configure-payout.sh, danach CKPool-Service und Ende-zu-Ende-Prüfung."
