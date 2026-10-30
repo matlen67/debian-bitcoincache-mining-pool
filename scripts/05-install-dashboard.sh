@@ -41,6 +41,9 @@ sudo install -d -o bchn -g bchn -m 750 "$DEST" "$DEST/templates" "$DEST/static"
 for f in app.py ckpool_api.py block_history.py templates/index.html static/script.js static/style.css; do
   sudo install -o bchn -g bchn -m 640 "$SRC/$f" "$DEST/$f"
 done
+# Keep the six reference dashboard files unchanged in Git; apply the small
+# Uptime-only display override to the installed copy after checksum validation.
+printf '\n/* Pool-Uptime: compact value, other metric cards unchanged */\n#pool-uptime { font-size: 22px; letter-spacing: -0.6px; }\n' | sudo tee -a "$DEST/static/style.css" >/dev/null
 sudo -u bchn python3 -m venv "$VENV"
 sudo -u bchn "$VENV/bin/python" -m pip install 'Flask==3.1.3'
 TMP="$(mktemp)"
