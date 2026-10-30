@@ -18,6 +18,16 @@ EXPECTED = {
     "bch-ckpool-mainnet.patch",
     "INSTALLATIONSANLEITUNG.md",
 }
+SHA256 = {
+    "dashboard/app.py": "1468e64765cab0335fe5a47204e34187d1d85f3ef00fced55765f915a271f4c9",
+    "dashboard/ckpool_api.py": "9b0b2e0d246fe9d1ba81303138d0c5b98350e884bddee5f21a3d4e58c13b4b2a",
+    "dashboard/block_history.py": "1f292235205b8c955d66470c7b5f70ef938dc0af82d26fb40ed0dd4ab1df8cc8",
+    "dashboard/templates/index.html": "157e48df2f8384b714ab7e4b817ab99cb1841f1ff180c88225946d88797e8ef2",
+    "dashboard/static/script.js": "bace340ff9d1938db4363e114936853f669768e8fbf77834c5565fea86cb10f0",
+    "dashboard/static/style.css": "f5ebc472b9561c39854a9f232f2f14b99f6b6f407d27c31e9092cbe15345c79d",
+    "bch-ckpool-mainnet.patch": "631abb14914e84c1550d92d0fc19d1b95eca38b37b912d7d7240e01cba82f916",
+    "INSTALLATIONSANLEITUNG.md": "9e49bcd9d5bcfd18f3d4ab0a17ba856c6ebc362a2e961f1687dd50185504892f",
+}
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DEST = {
     "bch-ckpool-mainnet.patch": "patches/bch-ckpool-mainnet.patch",
@@ -37,6 +47,10 @@ def main():
             if info.external_attr >> 16 & 0o170000 == 0o120000:
                 raise SystemExit("Symlink im ZIP verweigert.")
         data = {name: z.read(name) for name in EXPECTED}
+    for name, raw in data.items():
+        digest = hashlib.sha256(raw).hexdigest()
+        if digest != SHA256[name]:
+            raise SystemExit(f"SHA256 stimmt nicht: {name}. Import verweigert.")
     for name, raw in sorted(data.items()):
         text = raw.decode("utf-8")
         rel = DEST.get(name, name)
