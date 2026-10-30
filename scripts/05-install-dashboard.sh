@@ -96,6 +96,24 @@ s = s.replace("setInterval(updateStatus, 5000);", "setInterval(updateStatus, 500
 p.write_text(s)
 PY
 sudo install -o bchn -g bchn -m 640 "$JS_TMP" "$DEST/static/script.js"
+# Blue accent for the four top metric cards, matching the tested production CSS.
+# Apply to the installed copy; keep the original dashboard assets unchanged.
+cat <<'CSS' | sudo tee -a "$DEST/static/style.css" >/dev/null
+
+/* Blaue Akzentkacheln – obere Dashboard-Reihe */
+.metrics .panel {
+    border: 1px solid #263852;
+    border-left: 4px solid #168bfa;
+    background: linear-gradient(
+        105deg,
+        rgba(22, 139, 250, 0.09) 0%,
+        #141f32 65%
+    );
+    box-shadow:
+        -3px 0 14px rgba(22, 139, 250, 0.16),
+        0 8px 35px rgba(0, 0, 0, 0.10);
+}
+CSS
 sudo -u bchn python3 -m venv "$VENV"
 sudo -u bchn "$VENV/bin/python" -m pip install 'Flask==3.1.3'
 TMP="$(mktemp)"
