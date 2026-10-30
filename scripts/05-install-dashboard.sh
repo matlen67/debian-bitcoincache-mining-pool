@@ -44,6 +44,58 @@ done
 # Keep the six reference dashboard files unchanged in Git; apply the small
 # Uptime-only display override to the installed copy after checksum validation.
 printf '\n/* Pool-Uptime: compact value, other metric cards unchanged */\n#pool-uptime { font-size: 22px; letter-spacing: -0.6px; }\n' | sudo tee -a "$DEST/static/style.css" >/dev/null
+# Apply a checked JavaScript override to the installed copy only.
+# Keep the immutable reference script and its SHA256 unchanged.
+JS_TMP="$(mktemp)"
+trap 'rm -f "$JS_TMP"' EXIT
+sudo install -o "$(id -un)" -g "$(id -gn)" -m 600 "$DEST/static/script.js" "$JS_TMP"
+python3 - "$JS_TMP" <<'PY'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+s = p.read_text()
+start = s.index("function formatPoolUptime(seconds) {")
+end = s.index("\nfunction formatHashrate(", start)
+old = s[start:end]
+new = """let poolUptimeAnchor = null;
+
+function formatPoolUptime(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return '—';
+  const total = Math.floor(seconds);
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  return `${days} ${days === 1 ? 'Tag' : 'Tage'} ` +
+    [hours, minutes, secs].map(n => String(n).padStart(2, '0')).join(':');
+}
+
+function tickPoolUptime() {
+  if (poolUptimeAnchor === null) return;
+  const elapsed = Math.max(0, Math.floor((Date.now() - poolUptimeAnchor.at) / 1000));
+  document.getElementById('pool-uptime').textContent =
+    formatPoolUptime(poolUptimeAnchor.seconds + elapsed);
+}
+"""
+if "const totalMinutes = Math.floor(seconds / 60);" not in old:
+    raise SystemExit("Unexpected uptime formatter; dashboard JS left unchanged")
+s = s[:start] + new + s[end:]
+old_status = """    $('pool-uptime').textContent = mining.online
+      ? formatPoolUptime(mining.uptime)
+      : '—';"""
+new_status = """    poolUptimeAnchor = mining.online && Number.isFinite(mining.uptime)
+      ? { seconds: mining.uptime, at: Date.now() }
+      : null;
+    $('pool-uptime').textContent = poolUptimeAnchor
+      ? formatPoolUptime(poolUptimeAnchor.seconds)
+      : '—';"""
+if s.count(old_status) != 1 or s.count("setInterval(updateStatus, 5000);") != 1:
+    raise SystemExit("Unexpected uptime update logic; dashboard JS left unchanged")
+s = s.replace(old_status, new_status)
+s = s.replace("setInterval(updateStatus, 5000);", "setInterval(updateStatus, 5000);\nsetInterval(tickPoolUptime, 1000);")
+p.write_text(s)
+PY
+sudo install -o bchn -g bchn -m 640 "$JS_TMP" "$DEST/static/script.js"
 sudo -u bchn python3 -m venv "$VENV"
 sudo -u bchn "$VENV/bin/python" -m pip install 'Flask==3.1.3'
 TMP="$(mktemp)"
