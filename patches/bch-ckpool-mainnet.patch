@@ -1,0 +1,222 @@
+diff --git a/src/bitcoin.c b/src/bitcoin.c
+index 94d61f77..b323ac23 100644
+--- a/src/bitcoin.c
++++ b/src/bitcoin.c
+@@ -75,6 +75,20 @@ bool validate_address(connsock_t *cs, const char *address, bool *script, bool *s
+ 		LOGERR("Failed to get json root in response to validate_address");
+ 		goto out;
+ 	}
++	/* BCH: Check JSON-RPC error before interpreting result:null as success. */
++	{
++			yyjson_val *rpc_error = yyjson_obj_get(root, "error");
++
++			if (rpc_error && !yyjson_is_null(rpc_error)) {
++					char *error_json = yyjson_val_write(rpc_error, 0, NULL);
++
++					LOGWARNING("SUBMIT BLOCK RPC ERROR: %s",
++							   error_json ? error_json : "unknown");
++
++					free(error_json);
++					goto out;
++			}
++	}
+ 	res_val = yyjson_obj_get(root, "result");
+ 	if (unlikely(!res_val)) {
+ 		LOGERR("Failed to get result json response to validate_address");
+diff --git a/src/ckpool.h b/src/ckpool.h
+index 1bbeb4bd..bfc17fa5 100644
+--- a/src/ckpool.h
++++ b/src/ckpool.h
+@@ -459,11 +459,22 @@ struct apimsg {
+ //static inline void ckpool_api(apimsg_t __maybe_unused *apimsg) {};
+ static inline yyjson_mut_doc *yyjson_encode_errormsg(yyjson_read_err __maybe_unused *err_val) { return NULL; };
+ static inline yyjson_mut_doc *yyjson_errormsg(const char __maybe_unused *fmt, ...) { return NULL; };
+-static inline void send_api_yyresponse(yyjson_mut_doc *doc, const int __maybe_unused sockd)
++static inline void send_api_yyresponse(yyjson_mut_doc *doc, const int sockd)
+ {
+-	if (doc)
+-		yyjson_mut_doc_free(doc);
+-};
++    char *response;
++
++    if (!doc)
++        return;
++
++    response = yyjson_mut_write(doc, 0, NULL);
++
++    if (response) {
++        send_unix_msg(sockd, response);
++        free(response);
++    }
++
++    yyjson_mut_doc_free(doc);
++}
+ 
+ /* Subclients have client_ids in the high bits. Returns the value of the parent
+  * client if one exists. */
+diff --git a/src/stratifier.c b/src/stratifier.c
+index 9a60872c..326ab807 100644
+--- a/src/stratifier.c
++++ b/src/stratifier.c
+@@ -2410,6 +2410,150 @@ process_block(const workbase_t *wb, const char *coinbase, const int cblen,
+ 	return gbt_block;
+ }
+ 
++static void put_workbase(sdata_t *sdata, workbase_t *wb);
++
++/* BCH diagnostic: build a candidate block without submitting it. */
++/* BCH diagnostic: build a complete solo block without submitting it. */
++static void testblock_diagnostic(sdata_t *sdata, int sockd)
++{
++        workbase_t *wb;
++        uchar hash[32], header[80], flip32[32];
++        uchar *enonce1bin;
++        char *coinbase, *nonce2, *blockhex;
++        char blockhash[68];
++        int cblen = 0;
++        int enonce1len;
++        int fullcoinb2len;
++        int offset;
++
++        ck_wlock(&sdata->workbase_lock);
++        wb = sdata->current_workbase;
++        if (wb)
++                wb->readcount++;
++        ck_wunlock(&sdata->workbase_lock);
++
++        if (!wb) {
++                send_unix_msg(sockd, "ERROR: No current workbase");
++                return;
++        }
++
++        if (wb->incomplete || wb->proxy || wb->ipc) {
++                send_unix_msg(sockd, "ERROR: Unsupported workbase type");
++                goto out;
++        }
++
++        if (!ckpool.btcsolo) {
++                send_unix_msg(sockd, "ERROR: Diagnostic requires solo mode");
++                goto out;
++        }
++
++        enonce1len = wb->enonce1constlen + wb->enonce1varlen;
++
++        if (enonce1len <= 0 || enonce1len > 32 ||
++            wb->enonce2varlen <= 0 || wb->enonce2varlen > 32 ||
++            wb->coinb1len <= 0 || wb->coinb2len <= 0 ||
++            wb->merkles < 0 || wb->merkles > 16 ||
++            sdata->txnlen <= 0 || sdata->txnlen > 40 ||
++            wb->coinb3len < 4) {
++                send_unix_msg(sockd, "ERROR: Invalid workbase lengths");
++                goto out;
++        }
++
++        enonce1bin = alloca(enonce1len);
++        memset(enonce1bin, 0, enonce1len);
++
++        if (wb->enonce1constlen)
++                memcpy(enonce1bin, wb->enonce1constbin,
++                       wb->enonce1constlen);
++
++        nonce2 = alloca(wb->enonce2varlen * 2 + 1);
++        memset(nonce2, '0', wb->enonce2varlen * 2);
++        nonce2[wb->enonce2varlen * 2] = '\0';
++
++        /*
++         * Complete solo coinbase:
++         * coinb1 + extranonces + coinb2 +
++         * script length + payout script + coinb3
++         */
++        fullcoinb2len = wb->coinb2len + 1 +
++                        sdata->txnlen + wb->coinb3len;
++
++        coinbase = alloca(wb->coinb1len + enonce1len +
++                          wb->enonce2varlen + fullcoinb2len);
++
++        offset = 0;
++
++        memcpy(coinbase + offset, wb->coinb1bin, wb->coinb1len);
++        offset += wb->coinb1len;
++
++        memcpy(coinbase + offset, enonce1bin, enonce1len);
++        offset += enonce1len;
++
++        hex2bin(coinbase + offset, nonce2, wb->enonce2varlen);
++        offset += wb->enonce2varlen;
++
++        memcpy(coinbase + offset, wb->coinb2bin, wb->coinb2len);
++        offset += wb->coinb2len;
++
++        coinbase[offset++] = sdata->txnlen;
++
++        memcpy(coinbase + offset, sdata->txnbin, sdata->txnlen);
++        offset += sdata->txnlen;
++
++        memcpy(coinbase + offset, wb->coinb3bin, wb->coinb3len);
++        offset += wb->coinb3len;
++
++        cblen = offset;
++
++        /*
++         * Build the header with the correct merkle root.
++         * share_diff() cannot be used here because it would
++         * rebuild the incomplete base coinbase.
++         */
++        {
++                uchar merkle_root[32], merkle_sha[64];
++                uchar hash1[32];
++                uchar data[80];
++                int i;
++
++                gen_hash((uchar *)coinbase, merkle_root, cblen);
++                memcpy(merkle_sha, merkle_root, 32);
++
++                for (i = 0; i < wb->merkles; i++) {
++                        memcpy(merkle_sha + 32, wb->merklebin[i], 32);
++                        gen_hash(merkle_sha, merkle_root, 64);
++                        memcpy(merkle_sha, merkle_root, 32);
++                }
++
++                flip_32((uint32_t *)merkle_root,
++                        (uint32_t *)merkle_sha);
++
++                memcpy(data, wb->headerbin, 80);
++                memcpy(data + 36, merkle_root, 32);
++
++                *(uint32_t *)(data + 76) = 0;
++                *(uint32_t *)(data + 68) = htobe32(wb->ntime32);
++
++                flip_80((uint32_t *)header, (uint32_t *)data);
++
++                sha256(header, 80, hash1);
++                sha256(hash1, 32, hash);
++        }
++
++        blockhex = process_block(wb, coinbase, cblen,
++                                 header, hash, flip32, blockhash);
++
++        if (blockhex) {
++                send_unix_msg(sockd, blockhex);
++                free(blockhex);
++        } else {
++                send_unix_msg(sockd, "ERROR: Block generation failed");
++        }
++
++out:
++        put_workbase(sdata, wb);
++}
++
+ /* Submit block data locally, absorbing and freeing gbt_block */
+ static bool local_block_submit(char *gbt_block, const uchar *flip32, int height)
+ {
+@@ -5408,6 +5552,10 @@ retry:
+ 		setproxy(sdata, buf + 9, &umsg->sockd);
+ 		goto retry;
+ 	}
++	if (cmdmatch(buf, "testblock")) {
++        testblock_diagnostic(sdata, umsg->sockd);
++        goto retry;
++	}
+ 	if (cmdmatch(buf, "poolstats")) {
+ 		get_poolstats(sdata, &umsg->sockd);
+ 		goto retry;
