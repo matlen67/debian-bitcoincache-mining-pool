@@ -2,11 +2,11 @@
 > # Achtung! Die Anleitung ist noch nicht getestet. Ich habe den Mining-Pool erstellt und er läuft, eine Auszahlung erfolgte bisher nur im Testnet4 und nicht im Mainnet. Die Anleitung wurde aus meinen Installationsschritten erstellt.
 <br>
 <br>
-# Bitcoin Cash MAINNET Solo-Mining-Pool – Installationsanleitung
+# Bitcoin Cash MAINNET Solo-Mining-Pool – vollständige Installationsanleitung
 
-**Stand:** 28. Oktober 2026 · **Ziel:** Debian 13 (Trixie), BCHN 29.2.0, angepasster CKPool, Flask-Dashboard · **Keine Testnet-Konfiguration**
+**Version 3 · Stand:** 30. Oktober 2026 · **Ziel:** Debian 13 (Trixie), BCHN 29.2.0, angepasster CKPool, Flask-Dashboard · **Keine Testnet-Konfiguration**
 
-> **Geltungsbereich:** Dies ist eine reproduzierbare Installationsvorlage aus den Dateien und Einstellungen der funktionierenden Referenz-VM. Sie wurde **nicht auf einer zweiten frischen VM Ende-zu-Ende getestet**. Alle Befehle ausschließlich auf einer **neuen** VM ausführen, **nicht** auf dem produktiven Server. Besonders RPC-Anmeldung, Patch und Miner-Betrieb vor produktiver Nutzung testen.
+> **Geltungsbereich:** Dies ist eine reproduzierbare Installationsvorlage aus den Dateien und Einstellungen der funktionierenden Referenz-VM. Sie wird derzeit auf der zweiten VM `testpool` schrittweise geprüft; **ein vollständiger Ende-zu-Ende-Test inklusive Mining und Dashboard steht noch aus**. Alle Befehle ausschließlich auf einer **neuen** VM ausführen, **nicht** auf dem produktiven Server. Besonders RPC-Anmeldung, Patch und Miner-Betrieb vor produktiver Nutzung testen.
 
 ## Inhaltsverzeichnis
 
@@ -24,6 +24,8 @@
 ## 1. Überblick und Platzhalter
 
 **Referenzsystem:** Debian 13, 2 vCPU, 11 GiB RAM, 128 GB Disk, 6,5 GB Swap. Für Neuinstallation: 2+ vCPU, 12 GB RAM, zunächst mindestens 64 GB **erweiterbare** Disk; freie Kapazität überwachen. Pruning reduziert langfristige Blockchain-Daten, verhindert aber nicht temporären Speicherbedarf. Netzwerk: feste LAN-IP, SSH. Ports: BCH-P2P TCP 8333, BCH-RPC TCP 8332 **nur localhost**, Stratum TCP 3333 im LAN, Dashboard TCP 8080 im LAN.
+
+**Debian-Installation in Proxmox:** Bei der Softwareauswahl im Debian-13-Installer **„Debian desktop environment“ abwählen**, **„GNOME“ abwählen** und **„SSH server“ auswählen**. Die Installation kann vollständig ohne grafische Oberfläche erfolgen. „Standard system utilities“ sinnvollerweise aktiviert lassen. Nach der Installation über SSH anmelden. Die Einrichtung von `sudo` ist in Kapitel 2 beschrieben.
 
 **Architektur:** ASIC-Miner → CKPool (Stratum 3333) ↔ BCHN (RPC 8332); Dashboard (Flask 8080) liest BCHN-RPC, CKPool-Unix-Socket und CKPool-Log.
 
@@ -45,7 +47,30 @@ Das begleitende Paket `bch-mainnet-installationspaket.zip` enthält **Originalda
 
 ## 2. Debian 13 vorbereiten
 
-Auf einer frisch installierten Debian-13-VM mit sudo-Benutzer:
+### 2.1 Debian-Installer und sudo einrichten
+
+Bei der Softwareauswahl **keine Desktop-Umgebung und kein GNOME** installieren; stattdessen **SSH server** sowie **standard system utilities** auswählen. Nach dem Neustart per SSH mit dem normalen Benutzer anmelden.
+
+Bei einer Debian-Installation mit eingerichteter Root-Anmeldung kann `sudo` fehlen. Zunächst als `root` anmelden (lokale Konsole oder `su -`), dann:
+
+```bash
+apt update
+apt install -y sudo
+usermod -aG sudo BENUTZERNAME
+```
+
+`BENUTZERNAME` durch den tatsächlichen Linux-Benutzernamen ersetzen, z. B. `matlen67`. **Wichtig:** Der Befehl heißt `usermod`, nicht `usermon`. Danach **abmelden und neu anmelden**, damit die neue Gruppenzugehörigkeit wirksam wird. Prüfen:
+
+```bash
+groups
+sudo -v
+```
+
+Wenn der Debian-Installer bei der Installation keinen Root-Account aktiviert und den ersten Benutzer bereits für `sudo` eingerichtet hat, ist dieser Schritt gegebenenfalls nicht erforderlich.
+
+### 2.2 Pakete installieren
+
+Auf einer frisch installierten Debian-13-VM mit funktionierendem sudo-Benutzer:
 
 ```bash
 sudo apt update && sudo apt full-upgrade -y
@@ -72,6 +97,9 @@ sudo useradd --system --user-group --home-dir /opt/bch-solo-pool --shell /usr/sb
 sudo install -d -o bchn -g bchn -m 750 /var/lib/bch-node
 sudo install -d -o pooladmin -g pooladmin -m 750 /opt/bch-solo-pool
 sudo usermod -aG pooladmin bchn
+# Damit auch der interaktive Installationsbenutzer das Verzeichnis betreten kann:
+sudo usermod -aG pooladmin "$USER"
+# Danach SSH-Sitzung ab- und erneut anmelden (oder: newgrp pooladmin).
 ```
 
 Bei bereits existierenden Benutzern nicht erneut `useradd` ausführen. Alle weiteren Pfade setzen diese Benutzer voraus.
@@ -200,10 +228,17 @@ Wenn RPC-Authentifizierung als `bchn` trotz Cookie nicht klappt, `bitcoin-cli` e
 ```bash
 sudo -u pooladmin git clone https://bitbucket.org/ckolivas/ckpool.git /opt/bch-solo-pool/ckpool
 cd /opt/bch-solo-pool/ckpool
-sudo -u pooladmin git checkout 1f5a92013be5c314b5645785fdf60396b008721c
+# Hinweis: Dieser Referenz-Commit war beim Test am 29.10.2026 im neuen Clone
+# nicht mehr erreichbar. Nur ausführen, wenn er lokal tatsächlich existiert:
+sudo -u pooladmin git cat-file -e 1f5a92013be5c314b5645785fdf60396b008721c^{commit} \
+  && sudo -u pooladmin git checkout 1f5a92013be5c314b5645785fdf60396b008721c
 sudo -u pooladmin git submodule update --init --recursive
 sudo -u pooladmin git submodule status
 ```
+
+**Ergebnis des Testlaufs:** Auf `testpool` war der Referenz-Commit nicht abrufbar; der Clone stand auf `4bba986ce63550cdc9c1a456e3ff2edf2406e1e9`. Der lokale BCH-Patch ließ sich dort anwenden und kompilieren; **die Laufzeitkompatibilität ist noch nicht nachgewiesen**. Bei fehlendem Referenz-Commit **nicht blind weiterarbeiten**: Commit mit `git rev-parse HEAD` dokumentieren, `git apply --check` und `git diff --check` ausführen, anschließend RPC-, Stratum- und Dashboard-Funktion vollständig testen. Ein neuer Upstream-Commit ist kein gleichwertiger Ersatz für den Referenz-Commit.
+
+**Wichtig beim Klonen:** Das Zielverzeichnis `/opt/bch-solo-pool/ckpool` darf vor `git clone` **noch nicht existieren**. Falls bereits geklont wurde, nicht erneut klonen. Das übergeordnete Verzeichnis muss für `pooladmin` beschreibbar sein. Der interaktive Benutzer benötigt für `cd` passende Verzeichnis-/Gruppenrechte.
 
 Die Referenz hatte `src/secp256k1` auf Commit `ebf594320dc838b9de1abb54d5ba98cef84f4297`.
 
@@ -281,7 +316,20 @@ LimitNOFILE=65535
 WantedBy=multi-user.target
 ```
 
-**Erst starten, wenn BCHN vollständig synchronisiert ist.**
+**Erst starten, wenn BCHN vollständig synchronisiert ist.** Ein aktiver `bchn.service` allein reicht nicht: `initialblockdownload` muss `false` sein. Während BCHN synchronisiert, können CKPool-Build und Dashboard vorbereitet werden.
+
+**Vor dem Start Platzhalter und RPC-Konfiguration ohne Ausgabe von Passwörtern prüfen:**
+
+```bash
+sudo -u pooladmin python3 -m json.tool /opt/bch-solo-pool/ckpool/bchsolo.conf >/dev/null \
+  && echo 'CKPool-Konfiguration: JSON gültig'
+sudo systemctl is-active bchn
+sudo -u bchn /usr/local/bin/bitcoin-cli \
+  -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf \
+  getblockchaininfo | jq '{chain,blocks,headers,initialblockdownload,pruned}'
+```
+
+RPC-Benutzer und -Passwort müssen in `bitcoin.conf` und `bchsolo.conf` übereinstimmen; keine Geheimnisse in Terminalausgaben oder Screenshots veröffentlichen.
 
 ```bash
 sudo systemctl daemon-reload
@@ -333,13 +381,33 @@ PAYOUT_SCRIPT = (
 )
 ```
 
-**Unbedingt durch den scriptPubKey der eigenen BCH-Auszahlungsadresse ersetzen**, sonst kann die Dashboard-Blockverifikation fälschlich `not_verified` melden. Die passende HEX-Ausgabe kann, sofern BCHN die Adresse erkennt, mit diesem Befehl geprüft werden:
+**Unbedingt durch den scriptPubKey der eigenen BCH-Auszahlungsadresse ersetzen**, sonst kann die Dashboard-Blockverifikation fälschlich `not_verified` melden. **scriptPubKey direkt aus der eigenen CKPool-Wallet-Adresse ermitteln:** Das folgende Beispiel liest die öffentliche Adresse aus `bchsolo.conf`, statt eine Adresse manuell zweimal einzugeben. Der Befehl funktioniert auch mit einer BCH-Legacy-Adresse, sofern BCHN sie als gültig erkennt.
 
 ```bash
-sudo -u bchn bitcoin-cli -datadir=/var/lib/bch-node validateaddress 'HIER_EIGENE_BCH_MAINNET_ADRESSE_EINTRAGEN'
+ADDR=$(sudo python3 -c '
+import json
+with open("/opt/bch-solo-pool/ckpool/bchsolo.conf") as f:
+    print(json.load(f)["btcaddress"])
+')
+sudo -u bchn /usr/local/bin/bitcoin-cli \
+  -datadir=/var/lib/bch-node \
+  -conf=/var/lib/bch-node/bitcoin.conf \
+  validateaddress "$ADDR"
 ```
 
-Prüfen, ob `isvalid: true` und ein `scriptPubKey`-Feld vorhanden sind. Nicht blind irgendeinen Hash aus der Adresse übernehmen; das Script muss zur tatsächlich in CKPool verwendeten Auszahlungsadresse passen. Falls das RPC-Ergebnis kein Script liefert, diesen Schritt anhand eines verifizierten BCH-Adressdecoders und eines Testblocks gesondert klären. Der Beispielwert darf **nicht** stehen bleiben.
+Im Ergebnis **`"isvalid": true`** prüfen und den **vollständigen Hexwert von `"scriptPubKey"`** übernehmen. Für eine typische Legacy-P2PKH-Adresse (beginnt mit `1`) hat das Script das Format `76a914...88ac`. **Nicht** den öffentlichen Adresstext oder nur einen Hash eintragen.
+
+```bash
+sudo nano /opt/bch-solo-pool/webinterface/bch-solo-dashboard/block_history.py
+```
+
+Den bisherigen fest kodierten Wert bei `PAYOUT_SCRIPT` durch den ermittelten Hexwert ersetzen, speichern und später den Dashboard-Dienst neu starten:
+
+```bash
+sudo systemctl restart bch-dashboard.service
+```
+
+**Wichtig:** Den Dienst erst neu starten, wenn er eingerichtet ist. Wenn `validateaddress` kein `scriptPubKey` liefert oder die Adresse ungültig ist, **nicht raten**, sondern das Adressformat und die Ausgabe separat prüfen. Der Scriptwert muss exakt zur Adresse unter `btcaddress` gehören.
 
 ### 7.2 Dashboard-Adresse und Umgebungsvariablen
 
@@ -459,7 +527,7 @@ Passwort:    x
 - [ ] `bitcoind --version` zeigt BCHN 29.2.0.
 - [ ] Node zeigt `chain=main`, IBD `false` und aktuelle Blockhöhe.
 - [ ] RPC nur auf localhost, `bitcoin.conf` mit Modus `600`.
-- [ ] CKPool-Patch ohne Fehler auf Referenz-Commit angewandt und kompiliert.
+- [ ] CKPool-Basis-Commit dokumentiert, Patch ohne Fehler angewandt und kompiliert; Laufzeittest erfolgreich.
 - [ ] CKPool-Log zeigt gültige RPC-/Template-Kommunikation.
 - [ ] Eigene Mainnet-Auszahlungsadresse ist in `bchsolo.conf` korrekt.
 - [ ] Dashboard-`PAYOUT_SCRIPT` stimmt mit der eigenen Adresse überein.
@@ -490,6 +558,16 @@ free -h
 
 **Mining-Risiko:** Solo-Mining ist zufallsabhängig; auch bei dauerhaft gültigen Shares kann über lange Zeit kein Block gefunden werden. Das Finden eines Blocks ist nicht gleichbedeutend mit endgültig bestätigter, spendbarer Auszahlung. Coinbase-Reife und Reorganisationen beachten.
 
+### Änderungen in Version 3 (Testinstallation `testpool`)
+
+- Debian-13-Installer: ohne Desktop/GNOME, mit SSH-Server; nachträgliche Installation von `sudo` und Gruppenzuordnung mit `usermod -aG sudo`.
+- Zugriffsrechte auf `/opt/bch-solo-pool`: interaktiven Installationsbenutzer in Gruppe `pooladmin` aufnehmen und neu anmelden.
+- CKPool-Clone: Zielordner nicht vorab anlegen; bereits vorhandenen Clone nicht erneut klonen.
+- Git-Commit: Referenz-Commit war beim Test nicht erreichbar; neuer Clone-Basis-Commit dokumentiert und weitere Laufzeittests als offen gekennzeichnet.
+- Vor CKPool-Start: JSON-Konfiguration, Platzhalter, RPC-Übereinstimmung und abgeschlossene Blockchain-Synchronisierung prüfen.
+- Kapitel 7.1: `scriptPubKey` per BCHN `validateaddress` direkt aus der in `bchsolo.conf` verwendeten BCH-Adresse ermitteln.
+- Dashboard-Installation kann parallel zur laufenden Blockchain-Synchronisierung vorbereitet werden.
+
 ### Referenz- und Projektquellen
 
 - Bitcoin Cash Node: https://bitcoincashnode.org/ und https://github.com/bitcoin-cash-node/bitcoin-cash-node/releases/tag/v29.2.0
@@ -500,4 +578,3 @@ free -h
 ---
 
 **Hinweis zu Beispielwerten:** Vor dem Start alle `HIER_...`-Texte ersetzen und die Beispiel-IP anpassen. **Dokumentationsstatus:** Vollständige Installationsvorlage aus dem bestehenden Mainnet-System, einschließlich Originaldateien. **Offen vor Freigabe als garantiert funktionsfähiges One-Click-Paket:** Test auf einer zweiten frischen Debian-13-VM, Bestätigung des CKPool-Wallet-Adressformats und der Miner-Worker-Syntax, authentifizierte GPG-Release-Prüfung und produktive Dashboard-Härtung. Die Referenz-VM wurde bei der Erstellung nicht verändert.
-
