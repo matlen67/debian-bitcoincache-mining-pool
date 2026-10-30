@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Stage 04: validate the payout address with BCHN and write CKPool configuration.
+# Stage 04: validate a BCH address for CKPool configuration and dashboard reference.
+# In -B solo mode, each miner's valid address username determines its coinbase output.
 # No pool service is started here.
 set -Eeuo pipefail
 umask 077
@@ -27,11 +28,13 @@ sudo test -f "$DASH/block_history.py" || fail "Dashboard-Originaldateien fehlen.
 id pooladmin >/dev/null 2>&1 || fail "pooladmin fehlt."
 id bchn >/dev/null 2>&1 || fail "bchn fehlt."
 [[ -x /usr/local/bin/bitcoin-cli ]] || fail "bitcoin-cli fehlt."
+echo "Hinweis: Im CKPool-Solo-Modus (-B) bestimmt jeder Miner seine Auszahlung über seine gültige BCH-Adresse im Stratum-Benutzernamen."
+echo "Die hier konfigurierte Adresse dient als CKPool-Konfigurations- und Dashboard-Referenz, nicht als feste Auszahlung für alle Miner."
 echo "Prüfe BCH-Mainnet-Adresse über lokalen BCHN-RPC ..."
 VALIDATION="$(sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf validateaddress "$BCH_ADDRESS")" || fail "BCHN-RPC nicht erreichbar."
 SCRIPT="$(python3 -c 'import json,sys,re; x=json.load(sys.stdin); s=x.get("scriptPubKey",""); assert x.get("isvalid") is True and re.fullmatch(r"76a914[0-9a-fA-F]{40}88ac",s); print(s.lower())' <<<"$VALIDATION")" || fail "Adresse nicht gültig oder kein P2PKH-scriptPubKey. Abbruch."
 echo "Adresse durch BCHN validiert. scriptPubKey: $SCRIPT"
-read -r -p 'Konfiguration für diese Adresse erzeugen? [j/N] ' ANSWER
+read -r -p 'Konfiguration mit dieser Referenzadresse erzeugen? [j/N] ' ANSWER
 [[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -65,5 +68,5 @@ PY
 sudo install -o pooladmin -g pooladmin -m 600 "$TMP/bchsolo.conf" "$CKDIR/bchsolo.conf"
 sudo install -d -o pooladmin -g pooladmin -m 750 "$CKDIR/logs"
 sudo install -o bchn -g bchn -m 640 "$TMP/block_history.py" "$DASH/block_history.py"
-echo "CKPool-Konfiguration und Dashboard-Auszahlungsscript eingerichtet."
+echo "CKPool-Konfiguration und Dashboard-Referenzskript eingerichtet (keine zentrale Miner-Auszahlung)."
 echo "Noch keine CKPool- oder Dashboard-Dienste gestartet."
