@@ -52,15 +52,21 @@ def main():
         digest = hashlib.sha256(raw).hexdigest()
         if digest != SHA256[name]:
             raise SystemExit(f"SHA256 stimmt nicht: {name}. Import verweigert.")
-    for name, raw in sorted(data.items()):
-        text = raw.decode("utf-8")
+    # Check all destinations before writing any file.
+    targets = {}
+    for name, raw in data.items():
         rel = DEST.get(name, name)
         path = ROOT / rel
-        if path.exists():
+        if path.exists() or path.is_symlink():
+            if name == "INSTALLATIONSANLEITUNG.md" and path.is_file() and not path.is_symlink() and hashlib.sha256(path.read_bytes()).hexdigest() == SHA256[name]:
+                continue
             raise SystemExit(f"Zieldatei existiert bereits, kein Überschreiben: {rel}")
+        targets[name] = (path, raw.decode("utf-8"))
+    for name, (path, decoded) in sorted(targets.items()):
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
-        print(f"{rel}: SHA256 {hashlib.sha256(raw).hexdigest()}")
+        path.write_text(decoded, encoding="utf-8")
+        rel = DEST.get(name, name)
+        print(f"{rel}: SHA256 {SHA256[name]}")
     print("Originaldateien importiert. Vor einem Commit Inhalte auf Zugangsdaten prüfen!")
 if __name__ == "__main__":
     main()
