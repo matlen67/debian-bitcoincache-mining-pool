@@ -74,4 +74,25 @@ sudo systemctl enable --now bch-ckpool.service
 sudo systemctl enable --now bch-dashboard.service
 sudo systemctl is-active --quiet bch-ckpool.service || die "CKPool-Dienst läuft nicht. Logs: sudo journalctl -u bch-ckpool.service -n 50 --no-pager"
 sudo systemctl is-active --quiet bch-dashboard.service || die "Dashboard-Dienst läuft nicht. Logs: sudo journalctl -u bch-dashboard.service -n 50 --no-pager"
-echo "Installation abgeschlossen: BCHN, CKPool und Dashboard laufen."
+# systemd may report active briefly before Flask attempts to bind its socket.
+# Wait until the HTTP listener is actually reachable, and verify the service
+# has not crashed into an auto-restart loop.
+if ! python3 - <<'PY'
+import socket, subprocess, time, sys
+for _ in range(30):
+    active = subprocess.run(["systemctl", "is-active", "--quiet", "bch-dashboard.service"]).returncode == 0
+    if active:
+        try:
+            with socket.create_connection(("127.0.0.1", 8080), timeout=0.5):
+                time.sleep(1)
+                if subprocess.run(["systemctl", "is-active", "--quiet", "bch-dashboard.service"]).returncode == 0:
+                    sys.exit(0)
+        except OSError:
+            pass
+    time.sleep(0.5)
+sys.exit(1)
+PY
+then
+  die "Dashboard ist nicht dauerhaft auf TCP 8080 erreichbar. Prüfen: sudo systemctl show bch-dashboard.service -p Environment; sudo journalctl -u bch-dashboard.service -n 50 --no-pager"
+fi
+echo "Installation abgeschlossen: BCHN, CKPool und Dashboard laufen; Dashboard-Port 8080 erreichbar."
