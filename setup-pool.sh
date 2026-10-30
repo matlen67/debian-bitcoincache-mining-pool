@@ -53,8 +53,8 @@ if ! sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/v
 fi
 [[ ! -e /opt/bch-solo-pool/ckpool ]] && bash "$ROOT/scripts/03-install-ckpool.sh"
 [[ -x /opt/bch-solo-pool/ckpool/src/ckpool ]] || die "CKPool-Build fehlt oder wurde abgebrochen."
-[[ ! -e /opt/bch-solo-pool/webinterface/bch-solo-dashboard ]] && bash "$ROOT/scripts/05-install-dashboard.sh"
-[[ -f /opt/bch-solo-pool/webinterface/bch-solo-dashboard/block_history.py ]] || die "Dashboard-Installation fehlt."
+if ! sudo test -e /opt/bch-solo-pool/webinterface/bch-solo-dashboard; then bash "$ROOT/scripts/05-install-dashboard.sh"; fi
+sudo test -f /opt/bch-solo-pool/webinterface/bch-solo-dashboard/block_history.py || die "Dashboard-Installation fehlt."
 [[ ! -e /opt/bch-solo-pool/ckpool/bchsolo.conf ]] && bash "$ROOT/scripts/04-configure-payout.sh"
 [[ -f /opt/bch-solo-pool/ckpool/bchsolo.conf ]] || die "Payout-Konfiguration fehlt."
 [[ ! -e /etc/systemd/system/bch-ckpool.service ]] && bash "$ROOT/scripts/06-install-ckpool-service.sh"
