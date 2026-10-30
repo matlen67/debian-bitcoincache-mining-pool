@@ -67,6 +67,7 @@ sudo test -f /opt/bch-solo-pool/webinterface/bch-solo-dashboard/block_history.py
 if ! sudo test -e /opt/bch-solo-pool/ckpool/bchsolo.conf; then bash "$ROOT/scripts/04-configure-payout.sh"; fi
 sudo test -f /opt/bch-solo-pool/ckpool/bchsolo.conf || die "Payout-Konfiguration fehlt."
 [[ ! -e /etc/systemd/system/bch-ckpool.service ]] && bash "$ROOT/scripts/06-install-ckpool-service.sh"
+bash "$ROOT/scripts/08-migrate-pool-user.sh"
 bash "$ROOT/scripts/07-health-check.sh"
 echo "Basisprüfung bestanden. Starte CKPool und Dashboard ..."
 sudo systemctl enable --now bch-ckpool.service
