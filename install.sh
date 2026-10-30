@@ -21,7 +21,9 @@ done
 [[ ! -e /var/lib/bch-node/bitcoin.conf && ! -e /opt/bch-solo-pool/ckpool/bchsolo.conf ]] || fail "Vorhandene Pool-Konfiguration erkannt."
 printf '\nBCH MAINNET Solo Pool — Installer v1 (Vorbereitung)\n'
 printf 'Dieser Entwicklungsstand prüft nur das System und erzeugt eine lokale Konfiguration.\n'
-read -r -p 'BCH Legacy-Adresse (beginnt mit 1): ' BCH_ADDRESS
+printf 'Hinweis: Im späteren CKPool-Solo-Modus (-B) verwendet jeder Miner seine eigene gültige BCH-Adresse als Stratum-Benutzernamen.\n'
+printf 'Die folgende Adresse ist eine Konfigurations-/Dashboard-Referenz, keine feste Auszahlung für alle Miner.\n'
+read -r -p 'BCH Legacy-Referenzadresse (beginnt mit 1): ' BCH_ADDRESS
 [[ "$BCH_ADDRESS" =~ ^1[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{25,34}$ ]] || fail "Keine plausible Legacy-P2PKH-Adresse. BCHN prüft die Adresse später zusätzlich."
 read -r -p 'Feste LAN-IPv4-Adresse des Servers: ' SERVER_IP
 python3 - "$SERVER_IP" <<'PY' || fail "Ungültige IPv4-Adresse."
