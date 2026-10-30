@@ -11,7 +11,7 @@ SETUP="$HOME/.config/bch-solo-installer/setup.env"
 [[ "$(stat -c %a "$SETUP")" == 600 ]] || fail "setup.env benötigt Dateimodus 600."
 # shellcheck disable=SC1090
 source "$SETUP"
-[[ "${RPC_USER:-}" =~ ^[A-Za-z0-9_-]+$ && "${RPC_PASSWORD:-}" =~ ^[a-f0-9]{64}$ ]] || fail "RPC-Zugangsdaten fehlen."
+[[ "${RPC_USER:-}" =~ ^[A-Za-z0-9_-]+$ && -n "${RPC_PASSWORD:-}" ]] || fail "RPC-Zugangsdaten fehlen."
 [[ "${BCH_ADDRESS:-}" =~ ^1[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{25,34}$ ]] || fail "Ungültiges Legacy-Adressformat."
 [[ "${SERVER_IP:-}" =~ ^[0-9.]+$ ]] || fail "Ungültige Server-IP."
 python3 - "$SERVER_IP" <<'PY' || fail "Ungültige IPv4."
