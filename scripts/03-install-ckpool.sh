@@ -13,8 +13,8 @@ PATCH="$ROOT/patches/bch-ckpool-mainnet.patch"
 [[ -d /var/lib/bch-node ]] || fail "BCHN-Datenverzeichnis fehlt."
 id pooladmin >/dev/null 2>&1 || fail "Benutzer pooladmin fehlt."
 CKDIR=/opt/bch-solo-pool/ckpool
-if [[ -e "$CKDIR" ]]; then
-  [[ -d "$CKDIR/.git" ]] || fail "Bestehendes CKPool-Verzeichnis ist kein Git-Checkout."
+if sudo test -e "$CKDIR"; then
+  sudo -u pooladmin test -d "$CKDIR/.git" || fail "Bestehendes CKPool-Verzeichnis ist kein zugänglicher Git-Checkout."
   [[ -z "$(sudo -u pooladmin git -C "$CKDIR" status --porcelain)" ]] || fail "CKPool-Checkout hat Änderungen; Abbruch."
 fi
 for c in git make; do command -v "$c" >/dev/null || fail "$c fehlt."; done
@@ -22,7 +22,7 @@ for c in git make; do command -v "$c" >/dev/null || fail "$c fehlt."; done
 COMMIT=4bba986ce63550cdc9c1a456e3ff2edf2406e1e9
 read -r -p "CKPool-Quellcode holen und BCH-Patch prüfen? [j/N] " ANSWER
 [[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
-if [[ ! -e "$CKDIR" ]]; then
+if ! sudo test -e "$CKDIR"; then
   sudo -u pooladmin git clone https://bitbucket.org/ckolivas/ckpool.git "$CKDIR"
 else
   echo "Vorhandenen unveränderten CKPool-Checkout wiederverwenden."
