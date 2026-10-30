@@ -60,12 +60,12 @@ if ! printf '%s' "$CHAIN_INFO" | python3 -c 'import json,sys; x=json.load(sys.st
   echo "Installer sicher angehalten. Nach der Synchronisierung erneut starten: bash setup-pool.sh"
   exit 3
 fi
-[[ ! -e /opt/bch-solo-pool/ckpool ]] && bash "$ROOT/scripts/03-install-ckpool.sh"
-[[ -x /opt/bch-solo-pool/ckpool/src/ckpool ]] || die "CKPool-Build fehlt oder wurde abgebrochen."
+if ! sudo test -x /opt/bch-solo-pool/ckpool/src/ckpool; then bash "$ROOT/scripts/03-install-ckpool.sh"; fi
+sudo test -x /opt/bch-solo-pool/ckpool/src/ckpool || die "CKPool-Build fehlt oder wurde abgebrochen."
 if ! sudo test -e /opt/bch-solo-pool/webinterface/bch-solo-dashboard; then bash "$ROOT/scripts/05-install-dashboard.sh"; fi
 sudo test -f /opt/bch-solo-pool/webinterface/bch-solo-dashboard/block_history.py || die "Dashboard-Installation fehlt."
-[[ ! -e /opt/bch-solo-pool/ckpool/bchsolo.conf ]] && bash "$ROOT/scripts/04-configure-payout.sh"
-[[ -f /opt/bch-solo-pool/ckpool/bchsolo.conf ]] || die "Payout-Konfiguration fehlt."
+if ! sudo test -e /opt/bch-solo-pool/ckpool/bchsolo.conf; then bash "$ROOT/scripts/04-configure-payout.sh"; fi
+sudo test -f /opt/bch-solo-pool/ckpool/bchsolo.conf || die "Payout-Konfiguration fehlt."
 [[ ! -e /etc/systemd/system/bch-ckpool.service ]] && bash "$ROOT/scripts/06-install-ckpool-service.sh"
 bash "$ROOT/scripts/07-health-check.sh"
 echo "Basisprüfung bestanden. CKPool und Dashboard bleiben gestoppt."
