@@ -10,16 +10,9 @@ source /etc/os-release
 [[ -x /usr/local/bin/bitcoin-cli && -f /etc/systemd/system/bchn.service ]] || die "BCHN fehlt."
 for p in /opt/bch-solo-pool/ckpool /etc/systemd/system/bch-ckpool.service /etc/systemd/system/bch-dashboard.service; do [[ ! -e "$p" ]] || die "Bestehende Poolinstallation: $p"; done
 id bchn >/dev/null || die "BCHN-Systembenutzer fehlt."
-# A previous pool uninstall may have removed the user but retained its group.
-if ! id pooladmin >/dev/null 2>&1; then
-  if getent group pooladmin >/dev/null; then
-    sudo useradd --system --gid pooladmin --home-dir /opt/bch-solo-pool --shell /usr/sbin/nologin pooladmin || die "pooladmin konnte nicht angelegt werden."
-  else
-    sudo useradd --system --user-group --home-dir /opt/bch-solo-pool --shell /usr/sbin/nologin pooladmin || die "pooladmin konnte nicht angelegt werden."
-  fi
-fi
-sudo install -d -o pooladmin -g pooladmin -m 750 /opt/bch-solo-pool
-sudo usermod -aG pooladmin bchn
+sudo install -d -o "$(id -un)" -g "$(id -gn)" -m 750 /opt/bch-solo-pool
+sudo usermod -aG bchn "$(id -un)"
+sudo chmod 640 /var/lib/bch-node/bitcoin.conf
 sudo systemctl is-active --quiet bchn.service || die "BCHN läuft nicht."
 sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf getblockchaininfo | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["chain"]=="main" and d["initialblockdownload"] is False and d["blocks"]>=d["headers"]' || die "BCHN ist nicht synchronisiert."
 STATE="$HOME/.config/bch-solo-installer"
