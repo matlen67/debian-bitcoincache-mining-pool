@@ -27,7 +27,7 @@ git commit -m "Add tested original CKPool patch and dashboard assets"
 git push origin installer-v1
 ```
 
-Die Originalanleitung in `docs/INSTALLATIONSANLEITUNG-v2.md` ist bereits versioniert; deshalb **vor dem Import** diese Datei vorübergehend entfernen oder die importierte Anleitung im ZIP überspringen. Ohne eine entsprechende Anpassung bricht der sichere Importer bei bereits vorhandenen Zieldateien absichtlich ab.
+Die Originalanleitung in `docs/INSTALLATIONSANLEITUNG-v2.md` ist bereits versioniert. Der Importer erkennt sie anhand ihrer SHA256-Prüfsumme und überspringt sie, wenn sie bytegleich ist. Andere vorhandene Zieldateien werden nicht überschrieben.
 
 ## Installation auf neuer Test-VM
 
