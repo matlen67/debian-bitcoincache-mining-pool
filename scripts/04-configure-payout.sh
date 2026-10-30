@@ -25,7 +25,7 @@ DASH=/opt/bch-solo-pool/webinterface/bch-solo-dashboard
 sudo test -x "$CKDIR/src/ckpool" || fail "CKPool ist noch nicht gebaut."
 sudo test -f "$DASH/block_history.py" || fail "Dashboard-Originaldateien fehlen."
 ! sudo test -e "$CKDIR/bchsolo.conf" || fail "bchsolo.conf existiert bereits; kein Überschreiben."
-id pooladmin >/dev/null 2>&1 || fail "pooladmin fehlt."
+
 id bchn >/dev/null 2>&1 || fail "bchn fehlt."
 [[ -x /usr/local/bin/bitcoin-cli ]] || fail "bitcoin-cli fehlt."
 echo "Hinweis: Im CKPool-Solo-Modus (-B) bestimmt jeder Miner seine Auszahlung über seine gültige BCH-Adresse im Stratum-Benutzernamen."
@@ -53,7 +53,7 @@ with open(path,"x") as f: json.dump(cfg,f,indent=2);f.write("\n")
 PY
 # Do not modify the original dashboard file in place until its expected
 # reference constant has been found exactly once.
-# Dashboard belongs to bchn (directory 0750, file 0640).
+# Dashboard belongs to the invoking administrator (file 0640).
 # Read via sudo into a private temporary file owned by the invoking user.
 sudo install -o "$(id -un)" -g "$(id -gn)" -m 600 "$DASH/block_history.py" "$TMP/original-block_history.py"
 python3 - "$TMP/original-block_history.py" "$TMP/block_history.py" "$SCRIPT" <<'PY'
@@ -65,8 +65,8 @@ if len(re.findall(pattern,src))!=1:
 out=re.sub(pattern,'PAYOUT_SCRIPT = (\n    "'+sys.argv[3]+'"\n)',src)
 pathlib.Path(sys.argv[2]).write_text(out)
 PY
-sudo install -o pooladmin -g pooladmin -m 600 "$TMP/bchsolo.conf" "$CKDIR/bchsolo.conf"
-sudo install -d -o pooladmin -g pooladmin -m 750 "$CKDIR/logs"
-sudo install -o bchn -g bchn -m 640 "$TMP/block_history.py" "$DASH/block_history.py"
+sudo install -o "$(id -un)" -g "$(id -gn)" -m 600 "$TMP/bchsolo.conf" "$CKDIR/bchsolo.conf"
+sudo install -d -o "$(id -un)" -g "$(id -gn)" -m 750 "$CKDIR/logs"
+sudo install -o "$(id -un)" -g "$(id -gn)" -m 640 "$TMP/block_history.py" "$DASH/block_history.py"
 echo "CKPool-Konfiguration und Dashboard-Referenzskript eingerichtet (keine zentrale Miner-Auszahlung)."
 echo "Noch keine CKPool- oder Dashboard-Dienste gestartet."
