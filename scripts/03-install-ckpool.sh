@@ -11,11 +11,11 @@ PATCH="$ROOT/patches/bch-ckpool-mainnet.patch"
 [[ -f "$HOME/.config/bch-solo-installer/setup.env" ]] || fail "Erst install.sh ausführen."
 [[ -x /usr/local/bin/bitcoin-cli ]] || fail "BCHN ist nicht installiert."
 [[ -d /var/lib/bch-node ]] || fail "BCHN-Datenverzeichnis fehlt."
-id pooladmin >/dev/null 2>&1 || fail "Benutzer pooladmin fehlt."
+
 CKDIR=/opt/bch-solo-pool/ckpool
 if sudo test -e "$CKDIR"; then
-  sudo -u pooladmin test -d "$CKDIR/.git" || fail "Bestehendes CKPool-Verzeichnis ist kein zugänglicher Git-Checkout."
-  [[ -z "$(sudo -u pooladmin git -C "$CKDIR" status --porcelain)" ]] || fail "CKPool-Checkout hat Änderungen; Abbruch."
+  sudo test -d "$CKDIR/.git" || fail "Bestehendes CKPool-Verzeichnis ist kein zugänglicher Git-Checkout."
+  [[ -z "$(git -C "$CKDIR" status --porcelain)" ]] || fail "CKPool-Checkout hat Änderungen; Abbruch."
 fi
 for c in git make; do command -v "$c" >/dev/null || fail "$c fehlt."; done
 # Tested on testpool; do not silently switch to upstream HEAD.
@@ -23,16 +23,15 @@ COMMIT=4bba986ce63550cdc9c1a456e3ff2edf2406e1e9
 read -r -p "CKPool-Quellcode holen und BCH-Patch prüfen? [j/N] " ANSWER
 [[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
 if ! sudo test -e "$CKDIR"; then
-  sudo -u pooladmin git clone https://bitbucket.org/ckolivas/ckpool.git "$CKDIR"
+  git clone https://bitbucket.org/ckolivas/ckpool.git "$CKDIR"
 else
   echo "Vorhandenen unveränderten CKPool-Checkout wiederverwenden."
 fi
-# The parent directory is intentionally private (0750); the invoking user
-# must not cd into it. Run all checkout/build operations as pooladmin.
+# CKPool is owned and built by the invoking administrator.
 PATCH_COPY="$(mktemp /tmp/bch-ckpool-patch.XXXXXXXX)"
 trap 'rm -f -- "$PATCH_COPY"' EXIT
 install -m 644 "$PATCH" "$PATCH_COPY"
-sudo -u pooladmin bash -euo pipefail -c '
+bash -euo pipefail -c '
   cd "$1"
   COMMIT="$2"
   PATCH_COPY="$3"
