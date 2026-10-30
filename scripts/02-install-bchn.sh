@@ -41,7 +41,6 @@ sudo useradd --system --user-group --home-dir /var/lib/bch-node --shell /usr/sbi
 sudo install -d -o bchn -g bchn -m 750 /var/lib/bch-node
 sudo install -d -o "$(id -un)" -g "$(id -gn)" -m 750 /opt/bch-solo-pool
 sudo usermod -aG bchn "$(id -un)"
-sudo chmod 640 /var/lib/bch-node/bitcoin.conf
 sudo install -m 755 "$TMP/bitcoin-cash-node-29.2.0/bin/bitcoind" /usr/local/bin/bitcoind
 sudo install -m 755 "$TMP/bitcoin-cash-node-29.2.0/bin/bitcoin-cli" /usr/local/bin/bitcoin-cli
 # Write root-owned staging files, then install with explicit ownership and permissions.
@@ -61,7 +60,7 @@ blocksonly=0
 rpcuser=$RPC_USER
 rpcpassword=$RPC_PASSWORD
 EOF
-sudo install -o bchn -g bchn -m 600 "$TMP/bitcoin.conf" /var/lib/bch-node/bitcoin.conf
+sudo install -o bchn -g bchn -m 640 "$TMP/bitcoin.conf" /var/lib/bch-node/bitcoin.conf
 cat >"$TMP/bchn.service" <<'EOF'
 [Unit]
 Description=Bitcoin Cash Node (Mainnet)
