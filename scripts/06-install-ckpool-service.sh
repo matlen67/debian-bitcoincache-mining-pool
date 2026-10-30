@@ -7,8 +7,8 @@ die() { printf 'FEHLER: %s\n' "$*" >&2; exit 1; }
 sudo -v || die "sudo erforderlich."
 CKDIR=/opt/bch-solo-pool/ckpool
 SERVICE=/etc/systemd/system/bch-ckpool.service
-[[ -x "$CKDIR/src/ckpool" ]] || die "CKPool-Binary fehlt."
-[[ -f "$CKDIR/bchsolo.conf" ]] || die "Konfiguration fehlt; erst 04-configure-payout.sh ausführen."
+sudo test -x "$CKDIR/src/ckpool" || die "CKPool-Binary fehlt."
+sudo test -f "$CKDIR/bchsolo.conf" || die "Konfiguration fehlt; erst 04-configure-payout.sh ausführen."
 [[ ! -e "$SERVICE" ]] || die "Service existiert bereits; kein Überschreiben."
 [[ -f /etc/systemd/system/bchn.service ]] || die "BCHN-Service fehlt."
 [[ -f /etc/systemd/system/bch-dashboard.service ]] || die "Dashboard-Service fehlt."
