@@ -27,17 +27,23 @@ if [[ ! -e "$CKDIR" ]]; then
 else
   echo "Vorhandenen unveränderten CKPool-Checkout wiederverwenden."
 fi
-cd /opt/bch-solo-pool/ckpool
-[[ "$(sudo -u pooladmin git rev-parse HEAD)" == "$COMMIT" ]] || sudo -u pooladmin git checkout --detach "$COMMIT"
-sudo -u pooladmin git submodule update --init --recursive
+# The parent directory is intentionally private (0750); the invoking user
+# must not cd into it. Run all checkout/build operations as pooladmin.
 PATCH_COPY="$(mktemp /tmp/bch-ckpool-patch.XXXXXXXX)"
 trap 'rm -f -- "$PATCH_COPY"' EXIT
 install -m 644 "$PATCH" "$PATCH_COPY"
-sudo -u pooladmin git apply --check "$PATCH_COPY" || fail "Patch passt nicht zu Commit $COMMIT. KEIN Build."
-sudo -u pooladmin git apply "$PATCH_COPY"
-sudo -u pooladmin ./autogen.sh
-sudo -u pooladmin ./configure
-sudo -u pooladmin make -j"$(nproc)"
-[[ -x src/ckpool ]] || fail "CKPool-Binary fehlt nach Build."
+sudo -u pooladmin bash -euo pipefail -c '
+  cd "$1"
+  COMMIT="$2"
+  PATCH_COPY="$3"
+  [[ "$(git rev-parse HEAD)" == "$COMMIT" ]] || git checkout --detach "$COMMIT"
+  git submodule update --init --recursive
+  git apply --check "$PATCH_COPY" || { echo "Patch passt nicht zu Commit $COMMIT. KEIN Build." >&2; exit 1; }
+  git apply "$PATCH_COPY"
+  ./autogen.sh
+  ./configure
+  make -j"$(nproc)"
+  [[ -x src/ckpool ]] || { echo "CKPool-Binary fehlt nach Build." >&2; exit 1; }
+' bash "$CKDIR" "$COMMIT" "$PATCH_COPY"
 echo "CKPool erfolgreich gebaut. Keine Konfiguration und kein Dienststart."
 echo "Nächster Schritt: BCH-Adresse via BCHN prüfen, Konfiguration erzeugen und Dienst einrichten."
