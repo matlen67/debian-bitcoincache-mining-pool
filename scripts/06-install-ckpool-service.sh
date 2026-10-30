@@ -12,12 +12,12 @@ sudo test -f "$CKDIR/bchsolo.conf" || die "Konfiguration fehlt; erst 04-configur
 [[ ! -e "$SERVICE" ]] || die "Service existiert bereits; kein Überschreiben."
 [[ -f /etc/systemd/system/bchn.service ]] || die "BCHN-Service fehlt."
 [[ -f /etc/systemd/system/bch-dashboard.service ]] || die "Dashboard-Service fehlt."
-id pooladmin >/dev/null 2>&1 || die "pooladmin fehlt."
+
 read -r -p 'CKPool-systemd-Dienst anlegen (noch nicht starten)? [j/N] ' ANSWER
 [[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
-cat >"$TMP" <<'EOF'
+cat >"$TMP" <<EOF
 [Unit]
 Description=Bitcoin Cash Mainnet Solo Pool (CKPool)
 Wants=network-online.target
@@ -26,8 +26,8 @@ Requires=bchn.service
 
 [Service]
 Type=simple
-User=pooladmin
-Group=pooladmin
+User=$(id -un)
+Group=$(id -gn)
 WorkingDirectory=/opt/bch-solo-pool/ckpool
 ExecStart=/opt/bch-solo-pool/ckpool/src/ckpool -B -c bchsolo.conf
 Restart=on-failure
