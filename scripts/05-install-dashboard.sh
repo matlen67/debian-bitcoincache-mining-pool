@@ -28,7 +28,7 @@ for f in app.py ckpool_api.py block_history.py templates/index.html static/scrip
   [[ -s "$SRC/$f" ]] || die "Original-Dashboarddatei fehlt: $SRC/$f"
 done
 [[ -x /usr/local/bin/bitcoin-cli ]] || die "BCHN fehlt."
-[[ -x /opt/bch-solo-pool/ckpool/src/ckpool ]] || die "CKPool-Binary fehlt. Erst Stufe 03 ausführen."
+sudo test -x /opt/bch-solo-pool/ckpool/src/ckpool || die "CKPool-Binary fehlt. Erst Stufe 03 ausführen."
 [[ ! -e "$DEST" && ! -e "$VENV" && ! -e "$SERVICE" ]] || die "Dashboard ist bereits installiert; kein Überschreiben."
 id bchn >/dev/null 2>&1 || die "Benutzer bchn fehlt."
 command -v python3 >/dev/null || die "Python fehlt."
