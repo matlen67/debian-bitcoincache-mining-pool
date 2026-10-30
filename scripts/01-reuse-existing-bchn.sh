@@ -21,13 +21,16 @@ echo 'Hinweis: Im CKPool-Solo-Modus (-B) bestimmt jeder Miner seine Auszahlung �
 echo 'Die folgende Adresse ist eine Konfigurations-/Dashboard-Referenz, keine feste Auszahlung f체r alle Miner.'
 read -r -p 'BCH Legacy-Referenzadresse (beginnt mit 1): ' ADDRESS
 [[ "$ADDRESS" =~ ^1[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{25,34}$ ]] || die "Ung체ltiges Adressformat."
-read -r -p 'Feste Server-LAN-IPv4: ' SERVER_IP
+# Determine the IPv4 address of the interface used for the default route.
+SERVER_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i=="src") {print $(i+1); exit}}')"
+[[ -n "$SERVER_IP" ]] || die "Keine IPv4-Adresse 체ber die Standardroute ermittelbar."
 python3 - "$SERVER_IP" <<'PY' || die "Ung체ltige IPv4."
 import ipaddress,sys
 x=ipaddress.ip_address(sys.argv[1])
 assert x.version==4 and not (x.is_unspecified or x.is_multicast or x.is_loopback)
 PY
 sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf validateaddress "$ADDRESS" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("isvalid") is True' || die "BCHN lehnt Adresse ab."
+printf 'Automatisch ermittelte Server-IP: %s\n' "$SERVER_IP"
 read -r -p 'RPC-Daten aus bestehender Node in lokale setup.env 체bernehmen? [j/N] ' ANSWER
 [[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
 mkdir -p "$STATE"
