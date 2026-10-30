@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Import the eight ORIGINAL text files from the user's tested v2 ZIP.
-Run locally: python3 scripts/import-package.py /path/to/bch-mainnet-installationspaket_v2.zip
+Run locally: python3 scripts/import-package.py /path/to/bch-installer-v1-originaldateien.zip\nAlso accepts the original bch-mainnet-installationspaket_v2.zip.
 Never import unknown archives.
 """
 import hashlib
@@ -37,6 +37,7 @@ def main():
     if len(sys.argv) != 2:
         raise SystemExit("Aufruf: python3 scripts/import-package.py /pfad/zum/paket.zip")
     archive = pathlib.Path(sys.argv[1]).resolve()
+    prepared_names = {DEST.get(name, name) for name in EXPECTED}
     with zipfile.ZipFile(archive) as z:
         names = z.namelist()
         if len(names) != len(EXPECTED) or set(names) != EXPECTED:
@@ -46,7 +47,7 @@ def main():
                 raise SystemExit("Ungültiger ZIP-Eintrag: " + info.filename)
             if info.external_attr >> 16 & 0o170000 == 0o120000:
                 raise SystemExit("Symlink im ZIP verweigert.")
-        data = {name: z.read(name) for name in EXPECTED}
+        data = {reverse[name]: z.read(name) for name in names}
     for name, raw in data.items():
         digest = hashlib.sha256(raw).hexdigest()
         if digest != SHA256[name]:
