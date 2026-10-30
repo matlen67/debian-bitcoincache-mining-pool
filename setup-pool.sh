@@ -46,9 +46,18 @@ if ! sudo systemctl is-active --quiet bchn.service; then
   exit 3
 fi
 # Do not compile or configure the pool until the node is fully synchronized.
-if ! sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf getblockchaininfo | python3 -c 'import json,sys; x=json.load(sys.stdin); assert x["chain"]=="main" and x["initialblockdownload"] is False and x["blocks"]>=x["headers"]'; then
-  echo "BCHN synchronisiert noch. Installer hier sicher angehalten."
-  echo "Nach vollständiger Synchronisierung erneut starten: bash setup-pool.sh"
+# BCHN may still be loading its wallet or block index immediately after startup.
+# Capture RPC output before parsing so startup errors do not become JSON tracebacks.
+if ! CHAIN_INFO="$(sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf getblockchaininfo 2>&1)"; then
+  echo "BCHN läuft, aber der RPC ist noch nicht bereit (Startphase oder vorübergehender Fehler)."
+  echo "RPC-Hinweis: $CHAIN_INFO"
+  echo "Installer sicher angehalten. Später erneut starten: bash setup-pool.sh"
+  exit 3
+fi
+if ! printf '%s' "$CHAIN_INFO" | python3 -c 'import json,sys; x=json.load(sys.stdin); sys.exit(0 if x.get("chain")=="main" and x.get("initialblockdownload") is False and x.get("blocks",0)>=x.get("headers",1) else 1)' 2>/dev/null; then
+  echo "BCHN ist noch nicht vollständig auf Mainnet synchronisiert oder liefert unerwartete Daten."
+  echo "Fortschritt prüfen: sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf getblockchaininfo"
+  echo "Installer sicher angehalten. Nach der Synchronisierung erneut starten: bash setup-pool.sh"
   exit 3
 fi
 [[ ! -e /opt/bch-solo-pool/ckpool ]] && bash "$ROOT/scripts/03-install-ckpool.sh"
