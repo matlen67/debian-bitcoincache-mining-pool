@@ -36,10 +36,10 @@ read -r -p 'Original-Dashboard installieren und systemd-Dienst anlegen (ohne Sta
 [[ "$OK" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
 sudo apt-get update
 sudo apt-get install -y python3-venv python3-pip
-sudo install -d -o bchn -g bchn -m 750 /opt/bch-solo-pool/webinterface
-sudo install -d -o bchn -g bchn -m 750 "$DEST" "$DEST/templates" "$DEST/static"
+sudo install -d -o "$(id -un)" -g "$(id -gn)" -m 750 /opt/bch-solo-pool/webinterface
+sudo install -d -o "$(id -un)" -g "$(id -gn)" -m 750 "$DEST" "$DEST/templates" "$DEST/static"
 for f in app.py ckpool_api.py block_history.py templates/index.html static/script.js static/style.css; do
-  sudo install -o bchn -g bchn -m 640 "$SRC/$f" "$DEST/$f"
+  sudo install -o "$(id -un)" -g "$(id -gn)" -m 640 "$SRC/$f" "$DEST/$f"
 done
 # Keep the six reference dashboard files unchanged in Git; apply the small
 # Uptime-only display override to the installed copy after checksum validation.
@@ -95,7 +95,7 @@ s = s.replace(old_status, new_status)
 s = s.replace("setInterval(updateStatus, 5000);", "setInterval(updateStatus, 5000);\nsetInterval(tickPoolUptime, 1000);")
 p.write_text(s)
 PY
-sudo install -o bchn -g bchn -m 640 "$JS_TMP" "$DEST/static/script.js"
+sudo install -o "$(id -un)" -g "$(id -gn)" -m 640 "$JS_TMP" "$DEST/static/script.js"
 # Blue accent for the four top metric cards, matching the tested production CSS.
 # Apply to the installed copy; keep the original dashboard assets unchanged.
 cat <<'CSS' | sudo tee -a "$DEST/static/style.css" >/dev/null
@@ -114,8 +114,8 @@ cat <<'CSS' | sudo tee -a "$DEST/static/style.css" >/dev/null
         0 8px 35px rgba(0, 0, 0, 0.10);
 }
 CSS
-sudo -u bchn python3 -m venv "$VENV"
-sudo -u bchn "$VENV/bin/python" -m pip install 'Flask==3.1.3'
+python3 -m venv "$VENV"
+"$VENV/bin/python" -m pip install 'Flask==3.1.3'
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
 cat > "$TMP" <<EOF
@@ -126,8 +126,9 @@ Wants=bchn.service bch-ckpool.service
 
 [Service]
 Type=simple
-User=bchn
-Group=bchn
+User=$(id -un)
+Group=$(id -gn)
+SupplementaryGroups=bchn
 WorkingDirectory=$DEST
 Environment=DASHBOARD_HOST=$SERVER_IP
 Environment=STRATUM_HOST=$SERVER_IP
