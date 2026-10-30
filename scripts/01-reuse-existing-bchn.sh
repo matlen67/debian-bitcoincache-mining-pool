@@ -38,7 +38,7 @@ for line in sys.stdin:
     k,v=s.split("=",1)
     if k.strip() in ("rpcuser","rpcpassword"): values[k.strip()]=v.strip()
 if not re.fullmatch(r"[A-Za-z0-9_-]+",values.get("rpcuser","")): sys.exit("RPC-Benutzer nicht unterstützt")
-if not re.fullmatch(r"[0-9a-f]{64}",values.get("rpcpassword","")): sys.exit("RPC-Passwort nicht im erwarteten 64-Hex-Format; bitte manuell prüfen")
+if not values.get("rpcpassword") or any(c in values["rpcpassword"] for c in "\\r\\n"): sys.exit("RPC-Passwort fehlt oder ist ungültig")
 fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
 with os.fdopen(fd,"w") as f:
     for k,v in (("BCH_ADDRESS",addr),("SERVER_IP",ip),("RPC_USER",values["rpcuser"]),("RPC_PASSWORD",values["rpcpassword"])):
