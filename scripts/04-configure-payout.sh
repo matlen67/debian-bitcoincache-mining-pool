@@ -22,9 +22,9 @@ assert a.version==4 and not (a.is_loopback or a.is_multicast or a.is_unspecified
 PY
 CKDIR=/opt/bch-solo-pool/ckpool
 DASH=/opt/bch-solo-pool/webinterface/bch-solo-dashboard
-[[ -x "$CKDIR/src/ckpool" ]] || fail "CKPool ist noch nicht gebaut."
+sudo test -x "$CKDIR/src/ckpool" || fail "CKPool ist noch nicht gebaut."
 sudo test -f "$DASH/block_history.py" || fail "Dashboard-Originaldateien fehlen."
-[[ ! -e "$CKDIR/bchsolo.conf" ]] || fail "bchsolo.conf existiert bereits; kein Überschreiben."
+! sudo test -e "$CKDIR/bchsolo.conf" || fail "bchsolo.conf existiert bereits; kein Überschreiben."
 id pooladmin >/dev/null 2>&1 || fail "pooladmin fehlt."
 id bchn >/dev/null 2>&1 || fail "bchn fehlt."
 [[ -x /usr/local/bin/bitcoin-cli ]] || fail "bitcoin-cli fehlt."
