@@ -20,7 +20,7 @@ source "$CONF"
 for p in /var/lib/bch-node /usr/local/bin/bitcoind /usr/local/bin/bitcoin-cli /etc/systemd/system/bchn.service /opt/bch-solo-pool; do
   [[ ! -e "$p" ]] || fail "Bestehender Pfad: $p — nichts überschreiben."
 done
-for u in bchn pooladmin; do id "$u" &>/dev/null && fail "Systembenutzer $u existiert bereits."; done
+id bchn &>/dev/null && fail "Systembenutzer bchn existiert bereits."
 read -r -p 'BCHN 29.2.0 herunterladen und auf dieser FRISCHEN VM installieren? [j/N] ' OK
 [[ "$OK" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
 sudo apt-get update
@@ -37,10 +37,11 @@ echo "HINWEIS: SHA256 stammt aus der Referenzinstallation; Signaturprüfung des 
 tar -xzf "$TMP/$ARCHIVE" -C "$TMP"
 [[ -f "$TMP/bitcoin-cash-node-29.2.0/bin/bitcoind" && -f "$TMP/bitcoin-cash-node-29.2.0/bin/bitcoin-cli" ]] || fail "Archivstruktur unerwartet."
 sudo useradd --system --user-group --home-dir /var/lib/bch-node --shell /usr/sbin/nologin bchn
-sudo useradd --system --user-group --home-dir /opt/bch-solo-pool --shell /usr/sbin/nologin pooladmin
+
 sudo install -d -o bchn -g bchn -m 750 /var/lib/bch-node
-sudo install -d -o pooladmin -g pooladmin -m 750 /opt/bch-solo-pool
-sudo usermod -aG pooladmin bchn
+sudo install -d -o "$(id -un)" -g "$(id -gn)" -m 750 /opt/bch-solo-pool
+sudo usermod -aG bchn "$(id -un)"
+sudo chmod 640 /var/lib/bch-node/bitcoin.conf
 sudo install -m 755 "$TMP/bitcoin-cash-node-29.2.0/bin/bitcoind" /usr/local/bin/bitcoind
 sudo install -m 755 "$TMP/bitcoin-cash-node-29.2.0/bin/bitcoin-cli" /usr/local/bin/bitcoin-cli
 # Write root-owned staging files, then install with explicit ownership and permissions.
