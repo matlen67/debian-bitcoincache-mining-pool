@@ -68,5 +68,9 @@ if ! sudo test -e /opt/bch-solo-pool/ckpool/bchsolo.conf; then bash "$ROOT/scrip
 sudo test -f /opt/bch-solo-pool/ckpool/bchsolo.conf || die "Payout-Konfiguration fehlt."
 [[ ! -e /etc/systemd/system/bch-ckpool.service ]] && bash "$ROOT/scripts/06-install-ckpool-service.sh"
 bash "$ROOT/scripts/07-health-check.sh"
-echo "Basisprüfung bestanden. CKPool und Dashboard bleiben gestoppt."
-echo "Vor Freigabe: RPC, CKPool-Socket, Miner-Share und Auszahlungsscript separat prüfen."
+echo "Basisprüfung bestanden. Starte CKPool und Dashboard ..."
+sudo systemctl enable --now bch-ckpool.service
+sudo systemctl enable --now bch-dashboard.service
+sudo systemctl is-active --quiet bch-ckpool.service || die "CKPool-Dienst läuft nicht. Logs: sudo journalctl -u bch-ckpool.service -n 50 --no-pager"
+sudo systemctl is-active --quiet bch-dashboard.service || die "Dashboard-Dienst läuft nicht. Logs: sudo journalctl -u bch-dashboard.service -n 50 --no-pager"
+echo "Installation abgeschlossen: BCHN, CKPool und Dashboard laufen."
