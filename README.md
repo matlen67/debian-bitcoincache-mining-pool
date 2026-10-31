@@ -1,6 +1,6 @@
 # Bitcoin Cash Mainnet Solo Mining Pool – Installer v1
 
-Automatisierte **Testinstallation** für eine neue Debian-13-(Trixie)-VM auf x86_64. Enthält BCHN 29.2.0, den angepassten CKPool, das originale Flask-Dashboard, systemd-Dienste und Diagnose-Skripte.
+Automatisierte **Installation** für eine neue Debian-13-(Trixie)-VM auf x86_64. Enthält BCHN 29.2.0, den angepassten CKPool, das originale Flask-Dashboard, systemd-Dienste und Diagnose-Skripte.
 
 **Status: Der automatische Installationsablauf wurde auf einer frischen Debian-13-Test-VM mit vorhandenem Blockchain-Backup erfolgreich bis zum erreichbaren Dashboard getestet.** Nicht auf dem produktiven Pool `debbch` ausführen. Der Branch `main` bleibt unverändert.
 
