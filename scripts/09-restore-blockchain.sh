@@ -31,9 +31,13 @@ with tarfile.open(sys.argv[1],"r:gz") as t:
 if seen != {"bch-node/blocks","bch-node/chainstate"}:
     raise SystemExit("Archiv enthält nicht beide erwarteten Verzeichnisse.")
 PY
-printf '\033[1;32m%s\033[0m' 'Blöcke und Chainstate aus diesem Archiv wiederherstellen? [j/N] '
-read -r ANSWER
-[[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
+if [[ "${BCHN_AUTO_RESTORE:-0}" != 1 ]]; then
+  printf '\033[1;32m%s\033[0m' 'Blöcke und Chainstate aus diesem Archiv wiederherstellen? [j/N] '
+  read -r ANSWER
+  [[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
+else
+  echo "Backup wird automatisch wiederhergestellt ..."
+fi
 STAGING="$(sudo mktemp -d "$DATA/.restore.XXXXXXXX")"
 cleanup() { sudo rm -rf -- "$STAGING"; }
 trap cleanup EXIT
