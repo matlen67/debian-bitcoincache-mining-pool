@@ -30,7 +30,9 @@ if [[ "$USE_BACKUP" =~ ^[jJyY]$ ]]; then
   read -r BACKUP_ARCHIVE
   BACKUP_ARCHIVE="${BACKUP_ARCHIVE:-/var/backups/bchn/bchn-blockchain.tar.gz}"
   [[ -f "$BACKUP_ARCHIVE" && -r "$BACKUP_ARCHIVE" ]] || fail "Backup nicht lesbar: $BACKUP_ARCHIVE"
+  echo "Backup gefunden. Prüfe Integrität (ca. 4 GB), bitte warten ..."
   gzip -t "$BACKUP_ARCHIVE" || fail "Backup beschädigt oder unvollständig."
+  echo "Integritätsprüfung erfolgreich. Prüfe Archivstruktur, bitte warten ..."
   python3 - "$BACKUP_ARCHIVE" <<'PY' || fail "Archivstruktur ungültig."
 import sys, tarfile
 seen=set()
