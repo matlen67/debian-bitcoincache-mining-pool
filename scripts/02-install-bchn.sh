@@ -85,14 +85,21 @@ WantedBy=multi-user.target
 EOF
 sudo install -o root -g root -m 644 "$TMP/bchn.service" /etc/systemd/system/bchn.service
 sudo systemctl daemon-reload
-echo "BCHN installiert. Start erfolgt nur nach ausdrücklicher Bestätigung."
-echo "Optional: Bereits gesicherte Blockchain von einem lokal eingebundenen Archiv übernehmen."
-printf '\033[1;32m%s\033[0m' 'Pfad zur bchn-blockchain.tar.gz (Enter = neu synchronisieren): '
-read -r BACKUP_ARCHIVE
-if [[ -n "$BACKUP_ARCHIVE" ]]; then
+echo "BCHN installiert."
+echo "Backup gegebenenfalls vorher per FileZilla nach /tmp kopieren."
+printf '\033[1;32m%s\033[0m' 'Blockchain aus vorhandenem Backup wiederherstellen? [j/N] '
+read -r USE_BACKUP
+if [[ "$USE_BACKUP" =~ ^[jJyY]$ ]]; then
+  printf '\033[1;32m%s\033[0m' 'Pfad zum Backup [/tmp/bchn-blockchain.tar.gz]: '
+  read -r BACKUP_ARCHIVE
+  BACKUP_ARCHIVE="${BACKUP_ARCHIVE:-/tmp/bchn-blockchain.tar.gz}"
+  [[ -f "$BACKUP_ARCHIVE" && -r "$BACKUP_ARCHIVE" ]] || fail "Backup nicht lesbar: $BACKUP_ARCHIVE"
   bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/09-restore-blockchain.sh" "$BACKUP_ARCHIVE"
+  sudo test -d /var/lib/bch-node/blocks && sudo test -d /var/lib/bch-node/chainstate || fail "Backup nicht wiederhergestellt. BCHN wird nicht gestartet."
+else
+  echo "Ohne Backup: BCHN synchronisiert die Blockchain neu."
 fi
-printf '\033[1;32m%s\033[0m' 'BCHN jetzt aktivieren und Blockchain-Synchronisierung starten? [j/N] '
+printf '\033[1;32m%s\033[0m' 'BCHN jetzt starten? [j/N] '
 read -r START
 if [[ "$START" =~ ^[jJyY]$ ]]; then
   sudo systemctl enable --now bchn.service
