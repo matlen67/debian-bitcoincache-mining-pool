@@ -21,9 +21,6 @@ for p in /var/lib/bch-node /usr/local/bin/bitcoind /usr/local/bin/bitcoin-cli /e
   [[ ! -e "$p" ]] || fail "Bestehender Pfad: $p — nichts überschreiben."
 done
 id bchn &>/dev/null && fail "Systembenutzer bchn existiert bereits."
-printf '\033[1;32m%s\033[0m' 'BCHN 29.2.0 herunterladen und auf dieser FRISCHEN VM installieren? [j/N] '
-read -r OK
-[[ "$OK" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
 # Choose and validate backup before downloading/installing BCHN.
 printf '\033[1;32m%s\033[0m' 'Ist ein Blockchain-Backup vorhanden? [j/N] '
 read -r USE_BACKUP
@@ -53,6 +50,9 @@ PY
 else
   echo "Kein Backup gewählt: Blockchain wird neu synchronisiert."
 fi
+printf '\033[1;32m%s\033[0m' 'BCHN 29.2.0 herunterladen und auf dieser FRISCHEN VM installieren? [j/N] '
+read -r OK
+[[ "$OK" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
 sudo apt-get update
 sudo apt-get install -y curl wget git ca-certificates gnupg tar gzip jq \
   build-essential yasm autoconf automake libtool pkgconf \
