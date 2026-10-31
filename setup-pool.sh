@@ -101,4 +101,9 @@ PY
 then
   die "Dashboard ist nicht dauerhaft auf TCP 8080 erreichbar. Prüfen: sudo systemctl show bch-dashboard.service -p Environment; sudo journalctl -u bch-dashboard.service -n 50 --no-pager"
 fi
-echo "Installation abgeschlossen: BCHN, CKPool und Dashboard laufen; Dashboard-Port 8080 erreichbar."
+DASHBOARD_IP="$(hostname -I | awk '{print $1}')"
+if [[ -n "$DASHBOARD_IP" ]]; then
+  echo "Installation abgeschlossen: BCHN, CKPool und Dashboard laufen; Dashboard erreichbar unter http://${DASHBOARD_IP}:8080"
+else
+  echo "Installation abgeschlossen: BCHN, CKPool und Dashboard laufen; Dashboard-Port 8080 erreichbar."
+fi
