@@ -23,7 +23,8 @@ printf '\nBCH MAINNET Solo Pool — Installer v1 (Vorbereitung)\n'
 printf 'Dieser Entwicklungsstand prüft nur das System und erzeugt eine lokale Konfiguration.\n'
 printf 'Hinweis: Im späteren CKPool-Solo-Modus (-B) verwendet jeder Miner seine eigene gültige BCH-Adresse als Stratum-Benutzernamen.\n'
 printf 'Die folgende Adresse ist eine Konfigurations-/Dashboard-Referenz, keine feste Auszahlung für alle Miner.\n'
-read -r -p 'BCH Legacy-Referenzadresse (beginnt mit 1): ' BCH_ADDRESS
+printf '\033[1;32m%s\033[0m' 'BCH Legacy-Referenzadresse (beginnt mit 1): '
+read -r BCH_ADDRESS
 [[ "$BCH_ADDRESS" =~ ^1[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{25,34}$ ]] || fail "Keine plausible Legacy-P2PKH-Adresse. BCHN prüft die Adresse später zusätzlich."
 # Determine the IPv4 address of the interface used for the default route.
 SERVER_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i=="src") {print $(i+1); exit}}')"
@@ -35,7 +36,8 @@ if a.version != 4 or a.is_loopback or a.is_multicast or a.is_unspecified:
     raise SystemExit(1)
 PY
 printf 'Automatisch ermittelte Server-IP: %s\n' "$SERVER_IP"
-read -r -p 'Konfiguration lokal speichern? [j/N] ' ANSWER
+printf '\033[1;32m%s\033[0m' 'Konfiguration lokal speichern? [j/N] '
+read -r ANSWER
 [[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo 'Abgebrochen, keine Änderungen.'; exit 0; }
 STATE_DIR="$HOME/.config/bch-solo-installer"
 mkdir -p "$STATE_DIR"
