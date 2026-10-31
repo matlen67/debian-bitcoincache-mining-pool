@@ -14,7 +14,7 @@ Automatisierte **Testinstallation** für eine neue Debian-13-(Trixie)-VM auf x86
 
 ## Kurzanleitung
 
-Nach der Debian-Installation auf der **neuen Test-VM** anmelden. **Falls `sudo` noch nicht installiert ist**, zunächst als `root` anmelden (z. B. mit `su -`) und `sudo` installieren sowie dem eigenen Benutzer die Berechtigung geben:
+Nach der Debian-Installation auf der **neuen VM** anmelden. **Falls `sudo` noch nicht installiert ist**, zunächst als `root` anmelden (z. B. mit `su -`) und `sudo` installieren sowie dem eigenen Benutzer die Berechtigung geben:
 
 ```bash
 su -
