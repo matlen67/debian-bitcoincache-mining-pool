@@ -46,9 +46,9 @@ Der Installer fragt nach einer BCH-Legacy-Adresse als Konfigurations- und Dashbo
 
 Falls bereits ein Blockchain-Backup (`bchn-blockchain.tar.gz`) vorhanden ist, dieses **vor dem Installer-Start selbstständig auf die VM übertragen**, beispielsweise nach `/var/backups/bchn/bchn-blockchain.tar.gz`. Die Übertragung und Bereitstellung des Backups sind nicht Bestandteil des Installers. **Nicht `/tmp` verwenden**, wenn es als kleines RAM-Dateisystem (`tmpfs`) eingebunden ist.
 
-Der Installer fragt zuerst, ob ein Backup vorhanden ist. Bei **Ja** den vollständigen lokalen Dateipfad angeben oder den angezeigten Beispielpfad mit Enter übernehmen. Das Archiv wird geprüft; fehlt es oder ist es ungültig, bricht die Installation ab. Danach wird BCHN automatisch installiert, `blocks` und `chainstate` werden wiederhergestellt und die Node gestartet. Die neue `bitcoin.conf` bleibt erhalten. Wird bei der Frage nach einem vorhandenen Backup **Nein** ausgewählt, installiert der Installer BCHN ohne Rücksicherung und startet die vollständige Blockchain-Synchronisierung. Diese kann je nach Internetverbindung und Hardware mehrere Stunden dauern.
+Der Installer fragt zuerst, ob ein Backup vorhanden ist. Bei **Ja** den vollständigen lokalen Dateipfad angeben oder den angezeigten Beispielpfad mit Enter übernehmen. Das Archiv wird geprüft; fehlt es oder ist es ungültig, bricht die Installation ab. Danach wird BCHN automatisch installiert, `blocks` und `chainstate` werden wiederhergestellt und die Node gestartet. Die neue `bitcoin.conf` bleibt erhalten.
 
-Bei **Nein** installiert der Installer BCHN automatisch und beginnt die Synchronisierung ohne Backup. **Während der Synchronisierung zeigt er regelmäßig den Fortschritt an und wartet bis zum Abschluss.** Anschließend installiert und startet er CKPool und Dashboard automatisch. Das kann ohne Backup längere Zeit dauern.
+Bei **Nein** installiert der Installer BCHN ohne Rücksicherung und startet die vollständige Blockchain-Synchronisierung. **Währenddessen zeigt er regelmäßig den Fortschritt an und wartet bis zum Abschluss.** Je nach Internetverbindung und Hardware kann das mehrere Stunden dauern. Anschließend installiert und startet er CKPool und Dashboard automatisch.
 
 Der Installer prüft die Installation und aktiviert anschließend beide Dienste automatisch. Status prüfen:
 
