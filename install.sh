@@ -23,7 +23,7 @@ printf '\nBCH MAINNET Solo Pool — Installer v1 (Vorbereitung)\n'
 printf 'Dieser Entwicklungsstand prüft nur das System und erzeugt eine lokale Konfiguration.\n'
 printf 'Hinweis: Im späteren CKPool-Solo-Modus (-B) verwendet jeder Miner seine eigene gültige BCH-Adresse als Stratum-Benutzernamen.\n'
 printf 'Die folgende Adresse ist eine Konfigurations-/Dashboard-Referenz, keine feste Auszahlung für alle Miner.\n'
-printf '\033[1;32m%s\033[0m' 'BCH Legacy-Referenzadresse (beginnt mit 1): '
+printf '\033[1;32m%s\033[0m' 'Bitte eine BCH Legacy-Referenzadresse (beginnt mit 1) eingeben: '
 read -r BCH_ADDRESS
 [[ "$BCH_ADDRESS" =~ ^1[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{25,34}$ ]] || fail "Keine plausible Legacy-P2PKH-Adresse. BCHN prüft die Adresse später zusätzlich."
 # Determine the IPv4 address of the interface used for the default route.
