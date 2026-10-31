@@ -24,6 +24,35 @@ id bchn &>/dev/null && fail "Systembenutzer bchn existiert bereits."
 printf '\033[1;32m%s\033[0m' 'BCHN 29.2.0 herunterladen und auf dieser FRISCHEN VM installieren? [j/N] '
 read -r OK
 [[ "$OK" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
+# Choose and validate backup before downloading/installing BCHN.
+printf '\033[1;32m%s\033[0m' 'Ist ein Blockchain-Backup vorhanden? [j/N] '
+read -r USE_BACKUP
+BACKUP_ARCHIVE=""
+if [[ "$USE_BACKUP" =~ ^[jJyY]$ ]]; then
+  printf '\033[1;32m%s\033[0m' 'Pfad zum Backup [/var/backups/bchn/bchn-blockchain.tar.gz]: '
+  read -r BACKUP_ARCHIVE
+  BACKUP_ARCHIVE="${BACKUP_ARCHIVE:-/var/backups/bchn/bchn-blockchain.tar.gz}"
+  [[ -f "$BACKUP_ARCHIVE" && -r "$BACKUP_ARCHIVE" ]] || fail "Backup nicht lesbar: $BACKUP_ARCHIVE"
+  gzip -t "$BACKUP_ARCHIVE" || fail "Backup beschädigt oder unvollständig."
+  python3 - "$BACKUP_ARCHIVE" <<'PY' || fail "Archivstruktur ungültig."
+import sys, tarfile
+seen=set()
+with tarfile.open(sys.argv[1], "r:gz") as t:
+    for m in t:
+        n=m.name.removeprefix("./").rstrip("/")
+        if n in ("bch-node/blocks", "bch-node/chainstate"):
+            seen.add(n)
+        if n not in ("bch-node", "bch-node/blocks", "bch-node/chainstate") and not n.startswith(("bch-node/blocks/", "bch-node/chainstate/")):
+            raise SystemExit("Unerwarteter Archiveintrag: "+n)
+        if ".." in n.split("/") or m.issym() or m.islnk() or not (m.isfile() or m.isdir()):
+            raise SystemExit("Unsicherer Archiveintrag: "+n)
+if seen != {"bch-node/blocks", "bch-node/chainstate"}:
+    raise SystemExit("Verzeichnisse blocks/chainstate fehlen.")
+PY
+  echo "Backup geprüft: $BACKUP_ARCHIVE"
+else
+  echo "Kein Backup gewählt: Blockchain wird neu synchronisiert."
+fi
 sudo apt-get update
 sudo apt-get install -y curl wget git ca-certificates gnupg tar gzip jq \
   build-essential yasm autoconf automake libtool pkgconf \
@@ -86,18 +115,9 @@ EOF
 sudo install -o root -g root -m 644 "$TMP/bchn.service" /etc/systemd/system/bchn.service
 sudo systemctl daemon-reload
 echo "BCHN installiert."
-echo "Backup gegebenenfalls vorher per FileZilla nach /tmp kopieren."
-printf '\033[1;32m%s\033[0m' 'Blockchain aus vorhandenem Backup wiederherstellen? [j/N] '
-read -r USE_BACKUP
-if [[ "$USE_BACKUP" =~ ^[jJyY]$ ]]; then
-  printf '\033[1;32m%s\033[0m' 'Pfad zum Backup [/tmp/bchn-blockchain.tar.gz]: '
-  read -r BACKUP_ARCHIVE
-  BACKUP_ARCHIVE="${BACKUP_ARCHIVE:-/tmp/bchn-blockchain.tar.gz}"
-  [[ -f "$BACKUP_ARCHIVE" && -r "$BACKUP_ARCHIVE" ]] || fail "Backup nicht lesbar: $BACKUP_ARCHIVE"
+if [[ -n "$BACKUP_ARCHIVE" ]]; then
   bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/09-restore-blockchain.sh" "$BACKUP_ARCHIVE"
   sudo test -d /var/lib/bch-node/blocks && sudo test -d /var/lib/bch-node/chainstate || fail "Backup nicht wiederhergestellt. BCHN wird nicht gestartet."
-else
-  echo "Ohne Backup: BCHN synchronisiert die Blockchain neu."
 fi
 printf '\033[1;32m%s\033[0m' 'BCHN jetzt starten? [j/N] '
 read -r START
