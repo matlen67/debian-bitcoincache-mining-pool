@@ -2,7 +2,7 @@
 
 Automatisierte **Installation** für eine neue Debian-13-(Trixie)-VM auf x86_64. Enthält BCHN 29.2.0, den angepassten CKPool, das originale Flask-Dashboard, systemd-Dienste und Diagnose-Skripte.
 
-**Status: Der automatische Installationsablauf wurde auf einer frischen Debian-13-Test-VM mit vorhandenem Blockchain-Backup erfolgreich bis zum erreichbaren Dashboard getestet.** Nicht auf dem produktiven Pool `debbch` ausführen. Der Branch `main` bleibt unverändert.
+**Status:** Der automatische Installationsablauf wurde auf einer frischen Debian-13-VM mit vorhandenem Blockchain-Backup erfolgreich bis zum erreichbaren Dashboard getestet. Für eine Neuinstallation vorgesehen; nicht auf einem bereits eingerichteten Pool ausführen.
 
 ## Dashboard-Vorschau
 
@@ -14,7 +14,7 @@ Automatisierte **Installation** für eine neue Debian-13-(Trixie)-VM auf x86_64.
 - IPv4-Adresse im vertrauenswürdigen LAN; der Installer ermittelt sie über die Standardroute automatisch. Für dauerhafte Erreichbarkeit eine DHCP-Reservierung im Router einrichten **oder eine feste IPv4-Adresse direkt in Debian konfigurieren**
 - Eigene **Bitcoin-Cash-Mainnet-Legacy-P2PKH-Adresse** (beginnt mit `1`); **niemals Seed oder privaten Schlüssel eingeben**
 - Mindestens ca. 4 GB RAM empfohlen, ausreichend Speicherplatz und Internetverbindung; der BCHN-Download benötigt Zeit
-- Noch **kein** BCHN, CKPool oder Dashboard auf dieser Test-VM
+- Noch **kein** BCHN, CKPool oder Dashboard auf dieser VM
 
 ## Kurzanleitung
 
@@ -84,14 +84,14 @@ Alle acht Dateien aus dem getesteten Referenzpaket sind im Branch vorhanden: sec
 
 Der Patch wird nur nach erfolgreichem `git apply --check` angewendet. Wenn der gepinnte CKPool-Commit nicht erreichbar ist oder der Patch nicht passt, stoppt die Installation.
 
-## Sicherheits- und Testgrenzen
+## Sicherheit und bekannte Einschränkungen
 
 - Der BCHN-Download wird mit der SHA256-Prüfsumme der Referenzinstallation verglichen. Eine unabhängige Herausgebersignatur wurde noch nicht überprüft.
 - Das Dashboard verwendet den Flask-Entwicklungsserver **ohne Login**. Port 8080 niemals ins öffentliche Internet freigeben.
 - **Getestet auf Debian 13 mit bereits synchronisierter BCHN:** Wiederholungsinstallation (`--reuse-bchn`), CKPool-/Dashboard-Dienststart und echte akzeptierte Bitaxe-Shares (0 Rejected im beobachteten Log). Zwei unterschiedliche BCH-Legacy-Adressen wurden als Stratum-Benutzernamen autorisiert; die jeweiligen P2PKH-Auszahlungsskripte wurden in den zusammengesetzten Coinbase-Daten eines empfangenen Mining-Jobs gefunden. Beide Adressen können zur selben Wallet gehören.
 - **Noch nicht verifiziert:** Vollständige Synchronisierung ab Genesis ohne Backup, unabhängige vollständige Dekodierung aller Coinbase-Ausgänge, tatsächlich gefundener/eingereichter Block und reale Blockauszahlung. Die bisherigen Coinbase-Tests prüfen das Vorkommen des erwarteten Skripts, nicht den erfolgreichen Mainnet-Blockfund.
 - RPC-Zugangsdaten und `bitcoin.conf`/`bchsolo.conf` nicht committen; Wallet-Seeds und private Schlüssel werden nicht benötigt.
-- Bei Installationsfehlern kann eine teilweise Einrichtung verbleiben. Auf einer **wegwerfbaren Test-VM mit Snapshot** testen.
+- Bei Installationsfehlern kann eine teilweise Einrichtung verbleiben. Vor der Installation nach Möglichkeit einen VM-Snapshot erstellen.
 
 ## GitHub-Prüfung
 
