@@ -37,12 +37,13 @@ echo "Adresse durch BCHN validiert. scriptPubKey: $SCRIPT"
 echo "Erzeuge CKPool-Konfiguration mit der bereits geprüften Referenzadresse ..."
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-python3 - "$TMP/bchsolo.conf" "$BCH_ADDRESS" "$SERVER_IP" "$RPC_USER" "$RPC_PASSWORD" <<'PY'
+python3 - "$TMP/bchsolo.conf" "$BCH_ADDRESS" "$SERVER_IP" "$RPC_USER" "$RPC_PASSWORD" "${BTC_SIG:-Mein BCH Solo Pool}" <<'PY'
 import json,sys
-path,addr,ip,user,pwd=sys.argv[1:]
+path,addr,ip,user,pwd,sig=sys.argv[1:]
+if not sig or not sig.isprintable() or len(sig)>40: raise SystemExit("Ungültige Coinbase-Signatur")
 cfg={
  "btcd":[{"url":"127.0.0.1:8332","auth":user,"pass":pwd,"notify":False}],
- "btcaddress":addr,"btcsig":"Mein BCH Solo Pool",
+ "btcaddress":addr,"btcsig":sig,
  "blockpoll":100,"donation":0,"nonce1length":4,"nonce2length":8,
  "update_interval":30,"version_mask":"1fffe000","dropidle":0,
  "serverurl":[ip+":3333"],"mindiff":1,"startdiff":1000,
