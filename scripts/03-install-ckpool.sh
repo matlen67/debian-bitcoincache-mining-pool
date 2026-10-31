@@ -20,8 +20,7 @@ fi
 for c in git make; do command -v "$c" >/dev/null || fail "$c fehlt."; done
 # Tested on testpool; do not silently switch to upstream HEAD.
 COMMIT=4bba986ce63550cdc9c1a456e3ff2edf2406e1e9
-read -r -p "CKPool-Quellcode holen und BCH-Patch prüfen? [j/N] " ANSWER
-[[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
+echo "Lade CKPool-Quellcode und prüfe den BCH-Patch automatisch, bitte warten ..."
 if ! sudo test -e "$CKDIR"; then
   git clone https://bitbucket.org/ckolivas/ckpool.git "$CKDIR"
 else
