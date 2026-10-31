@@ -42,6 +42,31 @@ bash setup-pool.sh
 
 Der Installer fragt nach einer BCH-Legacy-Adresse als Konfigurations- und Dashboard-Referenz und nach einer frei wählbaren Coinbase-Signatur (z. B. `/BCH Solo Pool/`). Mit Enter wird `Mein BCH Solo Pool` übernommen. Die Signatur darf maximal 40 Zeichen lang sein. Die LAN-IP wird automatisch ermittelt und zur Bestätigung angezeigt. **Im CKPool-Solo-Modus (`-B`) bestimmt die gültige BCH-Adresse im Stratum-Benutzernamen jedes Miners dessen eigene Coinbase-Auszahlung.** Die Konfigurationsadresse ist keine feste Auszahlung für alle Miner.
 
+### Blockchain-Backup auf einer bestehenden BCHN erstellen
+
+Für eine spätere Neuinstallation können die Verzeichnisse `blocks` und `chainstate` gesichert werden. **BCHN während der Sicherung sauber stoppen**, damit die Datenbank konsistent bleibt. Währenddessen ist der Node nicht verfügbar; der Mining-Pool kann keine neuen gültigen Jobs erhalten.
+
+```bash
+sudo systemctl stop bchn.service
+sudo mkdir -p /var/backups/bchn
+sudo tar -czvf /var/backups/bchn/bchn-blockchain.tar.gz \
+  -C /var/lib/bch-node blocks chainstate
+sudo systemctl start bchn.service
+```
+
+Danach das Archiv überprüfen und für den Download mit FileZilla (SFTP, Port 22) durch den angemeldeten SSH-Benutzer lesbar machen:
+
+```bash
+sudo gzip -t /var/backups/bchn/bchn-blockchain.tar.gz
+sudo tar -tzf /var/backups/bchn/bchn-blockchain.tar.gz | head -20
+sudo ls -lh /var/backups/bchn/bchn-blockchain.tar.gz
+sudo chown "$USER:$(id -gn)" /var/backups/bchn/bchn-blockchain.tar.gz
+sudo chmod 640 /var/backups/bchn/bchn-blockchain.tar.gz
+sudo chmod 755 /var/backups/bchn
+```
+
+In FileZilla die Datei `/var/backups/bchn/bchn-blockchain.tar.gz` herunterladen. **Hinweis:** Für das Archiv muss ausreichend freier Speicherplatz vorhanden sein; die Sicherung enthält keine Wallets oder RPC-Zugangsdaten. Nach dem Download empfiehlt sich ein zusätzlicher Prüfsummenvergleich zwischen Server und PC.
+
 ## Optionales Blockchain-Backup
 
 Falls bereits ein Blockchain-Backup (`bchn-blockchain.tar.gz`) vorhanden ist, dieses **vor dem Installer-Start selbstständig auf die VM übertragen**, beispielsweise nach `/var/backups/bchn/bchn-blockchain.tar.gz`. Die Übertragung und Bereitstellung des Backups sind nicht Bestandteil des Installers. **Nicht `/tmp` verwenden**, wenn es als kleines RAM-Dateisystem (`tmpfs`) eingebunden ist.
