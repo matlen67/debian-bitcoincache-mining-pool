@@ -40,26 +40,31 @@ if [[ ! -f /etc/systemd/system/bchn.service ]]; then
   [[ "$MODE" != "--reuse-bchn" ]] || die "BCHN fehlt im Wiederverwendungsmodus."
   bash "$ROOT/scripts/02-install-bchn.sh"
 fi
-if ! sudo systemctl is-active --quiet bchn.service; then
-  echo "BCHN muss zuerst gestartet werden:"
-  echo "  sudo systemctl enable --now bchn.service"
-  exit 3
-fi
-# Do not compile or configure the pool until the node is fully synchronized.
-# BCHN may still be loading its wallet or block index immediately after startup.
-# Capture RPC output before parsing so startup errors do not become JSON tracebacks.
-if ! CHAIN_INFO="$(sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf getblockchaininfo 2>&1)"; then
-  echo "BCHN läuft, aber der RPC ist noch nicht bereit (Startphase oder vorübergehender Fehler)."
-  echo "RPC-Hinweis: $CHAIN_INFO"
-  echo "Installer sicher angehalten. Später erneut starten: bash setup-pool.sh"
-  exit 3
-fi
-if ! printf '%s' "$CHAIN_INFO" | python3 -c 'import json,sys; x=json.load(sys.stdin); sys.exit(0 if x.get("chain")=="main" and x.get("initialblockdownload") is False and x.get("blocks",0)>=x.get("headers",1) else 1)' 2>/dev/null; then
-  echo "BCHN ist noch nicht vollständig auf Mainnet synchronisiert oder liefert unerwartete Daten."
-  echo "Fortschritt prüfen: sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf getblockchaininfo"
-  echo "Installer sicher angehalten. Nach der Synchronisierung erneut starten: bash setup-pool.sh"
-  exit 3
-fi
+# Wait for BCHN mainnet synchronization before installing CKPool.
+echo "Warte auf vollständige BCHN-Synchronisierung (Prüfung alle 60 Sekunden)."
+while true; do
+  sudo systemctl is-active --quiet bchn.service || die "BCHN-Dienst ist nicht aktiv. Logs: sudo journalctl -u bchn.service -n 50 --no-pager"
+  if CHAIN_INFO="$(sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf getblockchaininfo 2>/dev/null)"; then
+    STATUS="$(printf '%s' "$CHAIN_INFO" | python3 -c '
+import json,sys
+try:
+ x=json.load(sys.stdin)
+ assert x.get("chain")=="main"
+ print("{} {} {}".format(x.get("blocks",0),x.get("headers",0),str(x.get("initialblockdownload",True)).lower()))
+except (ValueError,AssertionError,TypeError):
+ sys.exit(1)
+' )" || die "Unerwartete Blockchain-Informationen (kein Mainnet oder ungültiges RPC-Ergebnis)."
+    read -r BLOCKS HEADERS IBD <<< "$STATUS"
+    echo "BCHN: $BLOCKS / $HEADERS Blöcke, initialblockdownload=$IBD"
+    if [[ "$IBD" == false && "$BLOCKS" -ge "$HEADERS" && "$HEADERS" -gt 0 ]]; then
+      echo "BCHN vollständig synchronisiert. Installiere CKPool und Dashboard ..."
+      break
+    fi
+  else
+    echo "BCHN lädt Blockchain-Daten / RPC noch nicht bereit ..."
+  fi
+  sleep 60
+done
 if ! sudo test -x /opt/bch-solo-pool/ckpool/src/ckpool; then bash "$ROOT/scripts/03-install-ckpool.sh"; fi
 sudo test -x /opt/bch-solo-pool/ckpool/src/ckpool || die "CKPool-Build fehlt oder wurde abgebrochen."
 if ! sudo test -e /opt/bch-solo-pool/webinterface/bch-solo-dashboard; then bash "$ROOT/scripts/05-install-dashboard.sh"; fi
