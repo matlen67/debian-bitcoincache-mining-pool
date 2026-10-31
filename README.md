@@ -4,6 +4,10 @@ Automatisierte **Testinstallation** für eine neue Debian-13-(Trixie)-VM auf x86
 
 **Status: Der automatische Installationsablauf wurde auf einer frischen Debian-13-Test-VM mit vorhandenem Blockchain-Backup erfolgreich bis zum erreichbaren Dashboard getestet.** Nicht auf dem produktiven Pool `debbch` ausführen. Der Branch `main` bleibt unverändert.
 
+## Dashboard-Vorschau
+
+![BCH Solo Pool Dashboard – Übersicht](docs/images/dashboard.png)
+
 ## Voraussetzungen
 
 - Debian 13 (eine Desktop-Oberfläche ist nicht erforderlich), mit aktiviertem SSH-Zugang und einem normalen Benutzer mit eingerichteten `sudo`-Rechten (bei Minimalinstallation ggf. erst einrichten)
