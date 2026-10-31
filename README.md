@@ -24,6 +24,8 @@ usermod -aG sudo DEIN_BENUTZERNAME
 exit
 ```
 
+**Wichtig vor dem Installer-Start:** Falls bereits ein Backup der BCH-Blockchain vorhanden ist, dieses vorher auf die VM kopieren – am besten in das Verzeichnis `/var/backups/bchn/` (z. B. `/var/backups/bchn/bchn-blockchain.tar.gz`). Der Installer fragt später nach dem Pfad. Ohne Backup ist dieser Schritt nicht erforderlich.
+
 Danach **neu anmelden** (damit die Gruppenzugehörigkeit aktiv wird) und mit dem normalen Benutzer fortfahren:
 
 ```bash
