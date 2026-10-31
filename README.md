@@ -6,7 +6,7 @@ Automatisierte **Testinstallation** für eine neue Debian-13-(Trixie)-VM auf x86
 
 ## Voraussetzungen
 
-- Debian 13 ohne Desktop, SSH-Zugang; ein normaler Benutzer mit eingerichteten `sudo`-Rechten (bei Minimalinstallation ggf. erst einrichten)
+- Debian 13 (eine Desktop-Oberfläche ist nicht erforderlich), mit aktiviertem SSH-Zugang und einem normalen Benutzer mit eingerichteten `sudo`-Rechten (bei Minimalinstallation ggf. erst einrichten)
 - IPv4-Adresse im vertrauenswürdigen LAN; der Installer ermittelt sie über die Standardroute automatisch. Für dauerhafte Erreichbarkeit eine DHCP-Reservierung im Router einrichten **oder eine feste IPv4-Adresse direkt in Debian konfigurieren**
 - Eigene **Bitcoin-Cash-Mainnet-Legacy-P2PKH-Adresse** (beginnt mit `1`); **niemals Seed oder privaten Schlüssel eingeben**
 - Mindestens ca. 4 GB RAM empfohlen, ausreichend Speicherplatz und Internetverbindung; der BCHN-Download benötigt Zeit
