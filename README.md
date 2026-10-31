@@ -40,7 +40,7 @@ cd debian-bitcoincache-mining-pool
 bash setup-pool.sh
 ```
 
-Der Installer fragt nach einer BCH-Legacy-Adresse als Konfigurations- und Dashboard-Referenz; die LAN-IP wird automatisch ermittelt und zur Bestätigung angezeigt. **Im CKPool-Solo-Modus (`-B`) bestimmt die gültige BCH-Adresse im Stratum-Benutzernamen jedes Miners dessen eigene Coinbase-Auszahlung.** Die Konfigurationsadresse ist keine feste Auszahlung für alle Miner.
+Der Installer fragt nach einer BCH-Legacy-Adresse als Konfigurations- und Dashboard-Referenz und nach einer frei wählbaren Coinbase-Signatur (z. B. `/BCH Solo Pool/`). Mit Enter wird `Mein BCH Solo Pool` übernommen. Die Signatur darf maximal 40 Zeichen lang sein. Die LAN-IP wird automatisch ermittelt und zur Bestätigung angezeigt. **Im CKPool-Solo-Modus (`-B`) bestimmt die gültige BCH-Adresse im Stratum-Benutzernamen jedes Miners dessen eigene Coinbase-Auszahlung.** Die Konfigurationsadresse ist keine feste Auszahlung für alle Miner.
 
 ## Optionales Blockchain-Backup
 
