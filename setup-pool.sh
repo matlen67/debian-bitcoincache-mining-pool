@@ -50,12 +50,13 @@ import json,sys
 try:
  x=json.load(sys.stdin)
  assert x.get("chain")=="main"
- print("{} {} {}".format(x.get("blocks",0),x.get("headers",0),str(x.get("initialblockdownload",True)).lower()))
+ print("{} {} {} {:.2f}".format(x.get("blocks",0),x.get("headers",0),str(x.get("initialblockdownload",True)).lower(),max(0.0,min(100.0,float(x.get("verificationprogress",0))*100))))
 except (ValueError,AssertionError,TypeError):
  sys.exit(1)
 ' )" || die "Unerwartete Blockchain-Informationen (kein Mainnet oder ungültiges RPC-Ergebnis)."
-    read -r BLOCKS HEADERS IBD <<< "$STATUS"
-    echo "BCHN: $BLOCKS / $HEADERS Blöcke, initialblockdownload=$IBD"
+    read -r BLOCKS HEADERS IBD PROGRESS <<< "$STATUS"
+    REMAINING=$(( HEADERS > BLOCKS ? HEADERS - BLOCKS : 0 ))
+    echo "BCHN-Sync: $PROGRESS% | Blöcke: $BLOCKS / $HEADERS | Noch offen: $REMAINING"
     if [[ "$IBD" == false && "$BLOCKS" -ge "$HEADERS" && "$HEADERS" -gt 0 ]]; then
       echo "BCHN vollständig synchronisiert. Installiere CKPool und Dashboard ..."
       break
