@@ -46,7 +46,8 @@ with tarfile.open(sys.argv[1], "r:gz") as t:
 if seen != {"bch-node/blocks", "bch-node/chainstate"}:
     raise SystemExit("Verzeichnisse blocks/chainstate fehlen.")
 PY
-  echo "Backup geprüft: $BACKUP_ARCHIVE"
+  echo "Backup gefunden und erfolgreich geprüft: $BACKUP_ARCHIVE"
+  echo "Starte automatisch den Download und die Installation von BCHN 29.2.0 ..."
 else
   echo "Kein Backup gewählt: Blockchain wird neu synchronisiert."
 fi
@@ -114,6 +115,7 @@ sudo install -o root -g root -m 644 "$TMP/bchn.service" /etc/systemd/system/bchn
 sudo systemctl daemon-reload
 echo "BCHN installiert."
 if [[ -n "$BACKUP_ARCHIVE" ]]; then
+  echo "Backup gefunden. Starte Entpackvorgang und Wiederherstellung der Blockchain ..."
   BCHN_AUTO_RESTORE=1 bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/09-restore-blockchain.sh" "$BACKUP_ARCHIVE"
   sudo test -d /var/lib/bch-node/blocks && sudo test -d /var/lib/bch-node/chainstate || fail "Backup nicht wiederhergestellt. BCHN wird nicht gestartet."
 fi
