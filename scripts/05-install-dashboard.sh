@@ -32,8 +32,7 @@ sudo test -x /opt/bch-solo-pool/ckpool/src/ckpool || die "CKPool-Binary fehlt. E
 [[ ! -e "$DEST" && ! -e "$VENV" && ! -e "$SERVICE" ]] || die "Dashboard ist bereits installiert; kein Überschreiben."
 id bchn >/dev/null 2>&1 || die "Benutzer bchn fehlt."
 command -v python3 >/dev/null || die "Python fehlt."
-read -r -p 'Original-Dashboard installieren und systemd-Dienst anlegen (ohne Start)? [j/N] ' OK
-[[ "$OK" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
+echo "Installiere Dashboard und richte den systemd-Dienst automatisch ein, bitte warten ..."
 sudo apt-get update
 sudo apt-get install -y python3-venv python3-pip
 sudo install -d -o "$(id -un)" -g "$(id -gn)" -m 750 /opt/bch-solo-pool/webinterface
