@@ -26,6 +26,10 @@ printf 'Die folgende Adresse ist eine Konfigurations-/Dashboard-Referenz, keine 
 printf '\033[1;32m%s\033[0m' 'Bitte eine BCH Legacy-Referenzadresse (beginnt mit 1) eingeben: '
 read -r BCH_ADDRESS
 [[ "$BCH_ADDRESS" =~ ^1[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{25,34}$ ]] || fail "Keine plausible Legacy-P2PKH-Adresse. BCHN prüft die Adresse später zusätzlich."
+printf '\033[1;32m%s\033[0m' 'Bitte eine eigene Coinbase-Signatur eingeben (z.B. /BCH Solo Pool/) [Mein BCH Solo Pool]: '
+read -r BTC_SIG
+BTC_SIG="${BTC_SIG:-Mein BCH Solo Pool}"
+[[ "$BTC_SIG" =~ ^[[:print:]]+$ && "${#BTC_SIG}" -le 40 ]] || fail "Coinbase-Signatur muss aus druckbaren Zeichen bestehen und darf maximal 40 Zeichen lang sein."
 # Determine the IPv4 address of the interface used for the default route.
 SERVER_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i=="src") {print $(i+1); exit}}')"
 [[ -n "$SERVER_IP" ]] || fail "Keine IPv4-Adresse über die Standardroute ermittelbar."
@@ -45,12 +49,12 @@ chmod 700 "$STATE_DIR"
 [[ ! -e "$STATE_DIR/setup.env" ]] || fail "Lokale Konfiguration existiert bereits; wird nicht überschrieben."
 RPC_PASSWORD="$(openssl rand -hex 32)"
 # Python repräsentiert Werte sicher als Shell-Strings; kein eval nötig.
-python3 - "$STATE_DIR/setup.env" "$BCH_ADDRESS" "$SERVER_IP" "$RPC_PASSWORD" <<'PY'
+python3 - "$STATE_DIR/setup.env" "$BCH_ADDRESS" "$SERVER_IP" "$RPC_PASSWORD" "$BTC_SIG" <<'PY'
 import os, shlex, sys
-path, addr, ip, password = sys.argv[1:]
+path, addr, ip, password, sig = sys.argv[1:]
 fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
 with os.fdopen(fd, 'w') as f:
-    for k, v in [('BCH_ADDRESS', addr), ('SERVER_IP', ip), ('RPC_USER', 'bchpool'), ('RPC_PASSWORD', password)]:
+    for k, v in [('BCH_ADDRESS', addr), ('SERVER_IP', ip), ('RPC_USER', 'bchpool'), ('RPC_PASSWORD', password), ('BTC_SIG', sig)]:
         f.write(k + '=' + shlex.quote(v) + '\n')
 PY
 printf '\nVorbereitung abgeschlossen. Lokale Konfiguration: %s\n' "$STATE_DIR/setup.env"
