@@ -13,8 +13,7 @@ sudo test -f "$CKDIR/bchsolo.conf" || die "Konfiguration fehlt; erst 04-configur
 [[ -f /etc/systemd/system/bchn.service ]] || die "BCHN-Service fehlt."
 [[ -f /etc/systemd/system/bch-dashboard.service ]] || die "Dashboard-Service fehlt."
 
-read -r -p 'CKPool-systemd-Dienst anlegen (noch nicht starten)? [j/N] ' ANSWER
-[[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
+echo "Lege CKPool-systemd-Dienst automatisch an (Start nach erfolgreicher Gesamtprüfung) ..."
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
 cat >"$TMP" <<EOF
