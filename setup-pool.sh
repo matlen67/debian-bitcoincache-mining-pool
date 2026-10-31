@@ -41,7 +41,8 @@ if [[ ! -f /etc/systemd/system/bchn.service ]]; then
   bash "$ROOT/scripts/02-install-bchn.sh"
 fi
 # Wait for BCHN mainnet synchronization before installing CKPool.
-echo "Warte auf vollständige BCHN-Synchronisierung (Prüfung alle 60 Sekunden)."
+echo "Warte auf vollständige BCHN-Synchronisierung (Status alle 5 Sekunden)."
+SYNC_WAIT_SECONDS=0
 while true; do
   sudo systemctl is-active --quiet bchn.service || die "BCHN-Dienst ist nicht aktiv. Logs: sudo journalctl -u bchn.service -n 50 --no-pager"
   if CHAIN_INFO="$(sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf getblockchaininfo 2>/dev/null)"; then
@@ -62,9 +63,10 @@ except (ValueError,AssertionError,TypeError):
       break
     fi
   else
-    echo "BCHN lädt Blockchain-Daten / RPC noch nicht bereit ..."
+    echo "BCHN startet bzw. lädt Blockchain-Daten ... seit ${SYNC_WAIT_SECONDS}s (RPC noch nicht bereit)."
   fi
-  sleep 60
+  sleep 5
+  SYNC_WAIT_SECONDS=$((SYNC_WAIT_SECONDS + 5))
 done
 if ! sudo test -x /opt/bch-solo-pool/ckpool/src/ckpool; then bash "$ROOT/scripts/03-install-ckpool.sh"; fi
 sudo test -x /opt/bch-solo-pool/ckpool/src/ckpool || die "CKPool-Build fehlt oder wurde abgebrochen."
