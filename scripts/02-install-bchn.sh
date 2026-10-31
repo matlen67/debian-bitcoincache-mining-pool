@@ -26,7 +26,7 @@ printf '\033[1;32m%s\033[0m' 'Ist ein Blockchain-Backup vorhanden? [j/N] '
 read -r USE_BACKUP
 BACKUP_ARCHIVE=""
 if [[ "$USE_BACKUP" =~ ^[jJyY]$ ]]; then
-  printf '\033[1;32m%s\033[0m' 'Pfad zum Backup [/var/backups/bchn/bchn-blockchain.tar.gz]: '
+  printf '\033[1;32m%s\033[0m' 'Pfad zum Backup: Beispiel [/var/backups/bchn/bchn-blockchain.tar.gz]: '
   read -r BACKUP_ARCHIVE
   BACKUP_ARCHIVE="${BACKUP_ARCHIVE:-/var/backups/bchn/bchn-blockchain.tar.gz}"
   [[ -f "$BACKUP_ARCHIVE" && -r "$BACKUP_ARCHIVE" ]] || fail "Backup nicht lesbar: $BACKUP_ARCHIVE"
@@ -50,9 +50,7 @@ PY
 else
   echo "Kein Backup gewählt: Blockchain wird neu synchronisiert."
 fi
-printf '\033[1;32m%s\033[0m' 'BCHN 29.2.0 herunterladen und auf dieser FRISCHEN VM installieren? [j/N] '
-read -r OK
-[[ "$OK" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
+echo "BCHN 29.2.0 wird automatisch heruntergeladen und installiert ..."
 sudo apt-get update
 sudo apt-get install -y curl wget git ca-certificates gnupg tar gzip jq \
   build-essential yasm autoconf automake libtool pkgconf \
@@ -116,15 +114,10 @@ sudo install -o root -g root -m 644 "$TMP/bchn.service" /etc/systemd/system/bchn
 sudo systemctl daemon-reload
 echo "BCHN installiert."
 if [[ -n "$BACKUP_ARCHIVE" ]]; then
-  bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/09-restore-blockchain.sh" "$BACKUP_ARCHIVE"
+  BCHN_AUTO_RESTORE=1 bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/09-restore-blockchain.sh" "$BACKUP_ARCHIVE"
   sudo test -d /var/lib/bch-node/blocks && sudo test -d /var/lib/bch-node/chainstate || fail "Backup nicht wiederhergestellt. BCHN wird nicht gestartet."
 fi
-printf '\033[1;32m%s\033[0m' 'BCHN jetzt starten? [j/N] '
-read -r START
-if [[ "$START" =~ ^[jJyY]$ ]]; then
-  sudo systemctl enable --now bchn.service
-  sudo systemctl --no-pager status bchn.service || true
-else
-  echo "Später starten: sudo systemctl enable --now bchn.service"
-fi
-echo "CKPool und Dashboard wurden nicht installiert oder gestartet."
+echo "Starte BCHN und beginne Blockchain-Synchronisierung ..."
+sudo systemctl enable --now bchn.service
+sudo systemctl is-active --quiet bchn.service || fail "BCHN konnte nicht gestartet werden."
+echo "BCHN gestartet. Installer wartet anschließend auf die vollständige Synchronisierung."
