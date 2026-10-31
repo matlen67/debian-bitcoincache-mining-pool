@@ -21,7 +21,8 @@ for p in /var/lib/bch-node /usr/local/bin/bitcoind /usr/local/bin/bitcoin-cli /e
   [[ ! -e "$p" ]] || fail "Bestehender Pfad: $p — nichts überschreiben."
 done
 id bchn &>/dev/null && fail "Systembenutzer bchn existiert bereits."
-read -r -p 'BCHN 29.2.0 herunterladen und auf dieser FRISCHEN VM installieren? [j/N] ' OK
+printf '\033[1;32m%s\033[0m' 'BCHN 29.2.0 herunterladen und auf dieser FRISCHEN VM installieren? [j/N] '
+read -r OK
 [[ "$OK" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
 sudo apt-get update
 sudo apt-get install -y curl wget git ca-certificates gnupg tar gzip jq \
@@ -86,11 +87,13 @@ sudo install -o root -g root -m 644 "$TMP/bchn.service" /etc/systemd/system/bchn
 sudo systemctl daemon-reload
 echo "BCHN installiert. Start erfolgt nur nach ausdrücklicher Bestätigung."
 echo "Optional: Bereits gesicherte Blockchain von einem lokal eingebundenen Archiv übernehmen."
-read -r -p 'Pfad zur bchn-blockchain.tar.gz (Enter = neu synchronisieren): ' BACKUP_ARCHIVE
+printf '\033[1;32m%s\033[0m' 'Pfad zur bchn-blockchain.tar.gz (Enter = neu synchronisieren): '
+read -r BACKUP_ARCHIVE
 if [[ -n "$BACKUP_ARCHIVE" ]]; then
   bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/09-restore-blockchain.sh" "$BACKUP_ARCHIVE"
 fi
-read -r -p 'BCHN jetzt aktivieren und Blockchain-Synchronisierung starten? [j/N] ' START
+printf '\033[1;32m%s\033[0m' 'BCHN jetzt aktivieren und Blockchain-Synchronisierung starten? [j/N] '
+read -r START
 if [[ "$START" =~ ^[jJyY]$ ]]; then
   sudo systemctl enable --now bchn.service
   sudo systemctl --no-pager status bchn.service || true
