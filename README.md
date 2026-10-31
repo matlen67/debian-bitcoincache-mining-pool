@@ -56,7 +56,7 @@ Danach im LAN das Dashboard öffnen: `http://DEINE-SERVER-IP:8080/`. Miner verwe
 
 ## Diagnose und Erkenntnisse aus dem Frischinstallations-Test
 
-- Die tatsächliche Dashboard-Adresse lautet `http://SERVER-IP:8080/`, **nicht Port 5000**.
+- Die Dashboard-Adresse lautet `http://SERVER-IP:8080/`.
 - `error code: -28` / `Verifying wallet...` unmittelbar nach dem ersten BCHN-Start kann eine vorübergehende Startphase sein. Der Installer wartet und zeigt regelmäßig den Status.
 - `Cannot assign requested address` beim Flask-Start deutet auf eine nicht mehr vorhandene Bind-IP in `/etc/systemd/system/bch-dashboard.service` hin. Der Installer bindet bei Neuinstallationen jetzt an `DASHBOARD_HOST=0.0.0.0`, damit DHCP-Wechsel nicht zum Startfehler führen. **Nur im vertrauenswürdigen LAN einsetzen; kein Portforwarding.** `STRATUM_HOST` zeigt weiterhin die beim Setup erkannte IP an und muss nach einem IP-Wechsel gegebenenfalls aktualisiert werden.
 - Die gespeicherte `SERVER_IP` in `~/.config/bch-solo-installer/setup.env` wird durch `git pull` **nicht rückwirkend geändert**. Bestehende systemd-Dateien werden ebenfalls nicht automatisch überschrieben.
