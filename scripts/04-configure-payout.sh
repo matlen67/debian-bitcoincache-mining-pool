@@ -34,8 +34,7 @@ echo "Prüfe BCH-Mainnet-Adresse über lokalen BCHN-RPC ..."
 VALIDATION="$(sudo -u bchn /usr/local/bin/bitcoin-cli -datadir=/var/lib/bch-node -conf=/var/lib/bch-node/bitcoin.conf validateaddress "$BCH_ADDRESS")" || fail "BCHN-RPC nicht erreichbar."
 SCRIPT="$(python3 -c 'import json,sys,re; x=json.load(sys.stdin); s=x.get("scriptPubKey",""); assert x.get("isvalid") is True and re.fullmatch(r"76a914[0-9a-fA-F]{40}88ac",s); print(s.lower())' <<<"$VALIDATION")" || fail "Adresse nicht gültig oder kein P2PKH-scriptPubKey. Abbruch."
 echo "Adresse durch BCHN validiert. scriptPubKey: $SCRIPT"
-read -r -p 'Konfiguration mit dieser Referenzadresse erzeugen? [j/N] ' ANSWER
-[[ "$ANSWER" =~ ^[jJyY]$ ]] || { echo "Abgebrochen."; exit 0; }
+echo "Erzeuge CKPool-Konfiguration mit der bereits geprüften Referenzadresse ..."
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 python3 - "$TMP/bchsolo.conf" "$BCH_ADDRESS" "$SERVER_IP" "$RPC_USER" "$RPC_PASSWORD" <<'PY'
