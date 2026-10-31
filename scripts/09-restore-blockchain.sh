@@ -41,6 +41,7 @@ fi
 STAGING="$(sudo mktemp -d "$DATA/.restore.XXXXXXXX")"
 cleanup() { sudo rm -rf -- "$STAGING"; }
 trap cleanup EXIT
+echo "Starte Entpackvorgang, bitte warten ..."
 sudo tar -xzf "$ARCHIVE" -C "$STAGING" --no-same-owner bch-node/blocks bch-node/chainstate
 sudo test -d "$STAGING/bch-node/blocks" && sudo test -d "$STAGING/bch-node/chainstate" || die "Extraktion unvollständig."
 sudo chown -R bchn:bchn "$STAGING/bch-node"
