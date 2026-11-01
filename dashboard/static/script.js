@@ -56,6 +56,26 @@ function formatHashrate(ghs) {
   return `${decimal(ghs)} GH/s`;
 }
 
+function formatNetworkHashrate(difficulty) {
+  if (!Number.isFinite(difficulty) || difficulty <= 0) return '—';
+  const ehs = difficulty * (2 ** 32) / 600 / 1e18;
+  return ehs >= 1 ? decimal(ehs) + ' EH/s' : decimal(ehs * 1000) + ' PH/s';
+}
+
+async function updateBchPrice() {
+  try {
+    const response = await fetch('/api/bch-price', { cache: 'no-store' });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+    $('bch-price-eur').textContent = Number.isFinite(data.eur) && data.eur > 0
+      ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(data.eur)
+      : '—';
+  } catch (error) {
+    $('bch-price-eur').textContent = '—';
+    console.warn('BCH-Kurs nicht verfuegbar:', error);
+  }
+}
+
 function formatNetworkDifficulty(diff) {
   if (!Number.isFinite(diff)) return '—';
   return `${decimal(diff / 1e9)} G`;
@@ -298,6 +318,8 @@ async function updateStatus() {
 
     $('network-difficulty').textContent =
       formatNetworkDifficulty(node.difficulty);
+    $('network-hashrate').textContent = node.online
+      ? formatNetworkHashrate(node.difficulty) : '—';
 
     $('peers').textContent = number(node.peers);
 
@@ -380,14 +402,6 @@ async function updateStatus() {
       : '—';
 
     // =========================================================
-    // ABGELEHNTE DIFFICULTY MIT PROZENTANGABE
-    // =========================================================
-
-    $('rejected').textContent = mining.online
-      ? formatRejectedDifficulty(mining.accepted, mining.rejected)
-      : '—';
-
-    // =========================================================
     // BEST DIFFICULTY DES POOLS
     // =========================================================
 
@@ -446,6 +460,8 @@ async function updateStatus() {
 
 updateStatus();
 setInterval(updateStatus, 5000);
+updateBchPrice();
+setInterval(updateBchPrice, 120000);
 
 // ============================================================
 // BCH Mainnet - Gefundene Blöcke
