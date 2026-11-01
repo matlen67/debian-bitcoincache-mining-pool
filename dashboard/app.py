@@ -4,6 +4,7 @@ import os
 import subprocess
 import threading
 import time
+from urllib.request import Request, urlopen
 from datetime import datetime, timezone
 
 from flask import Flask, jsonify, render_template
@@ -224,6 +225,37 @@ def status():
     return jsonify(payload)
 
 
+
+# ============================================================
+# BCH/EUR Kurs: serverseitiger CoinGecko-Abruf, 120s Cache
+# ============================================================
+
+PRICE_CACHE = {"eur": None, "timestamp": 0.0}
+PRICE_LOCK = threading.Lock()
+
+@app.get('/api/bch-price')
+def api_bch_price():
+    with PRICE_LOCK:
+        now = time.monotonic()
+        if now - PRICE_CACHE["timestamp"] >= 120:
+            try:
+                request = Request(
+                    'https://api.coingecko.com/api/v3/simple/price'
+                    '?ids=bitcoin-cash&vs_currencies=eur',
+                    headers={'User-Agent': 'BCHSoloDashboard/1.0',
+                             'Accept': 'application/json'}
+                )
+                with urlopen(request, timeout=5) as response:
+                    data = json.load(response)
+                value = float(data['bitcoin-cash']['eur'])
+                if not 0 < value < float('inf'):
+                    raise ValueError('Invalid BCH price')
+                PRICE_CACHE.update(eur=value, timestamp=time.monotonic())
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                app.logger.warning('BCH/EUR price unavailable: %s', exc)
+                PRICE_CACHE['timestamp'] = time.monotonic() - 60
+
+        return jsonify({'eur': PRICE_CACHE['eur'], 'source': 'CoinGecko'})
 
 # ============================================================
 # API - Gefundene Mainnet-Blöcke
