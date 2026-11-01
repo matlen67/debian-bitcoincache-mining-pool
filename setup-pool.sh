@@ -14,16 +14,33 @@ for f in patches/bch-ckpool-mainnet.patch dashboard/app.py dashboard/ckpool_api.
   [[ -s "$ROOT/$f" ]] || die "Originaldatei fehlt: $f. Vorher Original-ZIP importieren."
 done
 # Verify that every original source file matches the tested reference package.
-python3 - "$ROOT" <<'PY' || die "Originaldateien beschädigt oder verändert."
-import hashlib, runpy, sys
+python3 - "$ROOT" <<'PY' || die "Quelldateien beschädigt oder lokal verändert."
+import hashlib, runpy, subprocess, sys
 from pathlib import Path
 root = Path(sys.argv[1])
 mod = runpy.run_path(str(root / "scripts/import-package.py"))
+updated_dashboard = {
+    "dashboard/app.py",
+    "dashboard/templates/index.html",
+    "dashboard/static/script.js",
+}
 for name, digest in mod["SHA256"].items():
-    path = root / mod["DEST"].get(name, name)
-    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+    rel = mod["DEST"].get(name, name)
+    path = root / rel
+    if not path.is_file() or path.is_symlink():
+        raise SystemExit("Datei fehlt oder ist ein Symlink: " + str(path))
+    actual = hashlib.sha256(path.read_bytes()).hexdigest()
+    if name in updated_dashboard:
+        # Diese Dateien werden im Repository weiterentwickelt.
+        # Gegen den fest ausgecheckten Commit statt den alten ZIP-Hash prüfen.
+        expected = subprocess.run(
+            ["git", "-C", str(root), "show", "HEAD:" + rel],
+            capture_output=True, check=True
+        ).stdout
+        digest = hashlib.sha256(expected).hexdigest()
+    if actual != digest:
         raise SystemExit("SHA256 stimmt nicht: " + str(path))
-print("Alle acht Originaldateien geprüft.")
+print("Alle acht Quelldateien geprüft (aktuelle Dashboard-Version berücksichtigt).")
 PY
 if [[ "$MODE" == "--reuse-bchn" ]]; then
   [[ -f /etc/systemd/system/bchn.service ]] || die "Vorhandene BCHN fehlt."
