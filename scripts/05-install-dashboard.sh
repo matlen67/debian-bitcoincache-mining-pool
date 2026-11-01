@@ -27,6 +27,10 @@ SERVICE=/etc/systemd/system/bch-dashboard.service
 for f in app.py ckpool_api.py block_history.py templates/index.html static/script.js static/style.css; do
   [[ -s "$SRC/$f" ]] || die "Original-Dashboarddatei fehlt: $SRC/$f"
 done
+# Die Miner-Liste muss aktive Worker nach ihrer 5-Sekunden-Hashrate sortieren.
+# Sortierung ist Bestandteil der mitgelieferten script.js; keine zweite JS-Patchroutine.
+grep -Fq 'workerHashrate(b) - workerHashrate(a)' "$SRC/static/script.js" ||
+  die "Miner-Sortierung nach Hashrate fehlt in dashboard/static/script.js."
 [[ -x /usr/local/bin/bitcoin-cli ]] || die "BCHN fehlt."
 sudo test -x /opt/bch-solo-pool/ckpool/src/ckpool || die "CKPool-Binary fehlt. Erst Stufe 03 ausführen."
 [[ ! -e "$DEST" && ! -e "$VENV" && ! -e "$SERVICE" ]] || die "Dashboard ist bereits installiert; kein Überschreiben."
