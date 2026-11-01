@@ -190,16 +190,22 @@ function updateMiners(mining) {
 
   let visibleMiners = 0;
 
-  // Aktive Miner zuerst, inaktive Miner danach.
-  const sortedWorkers = [...workers].sort((a, b) => {
-    const isConnected = (worker) => clients.some(client =>
-      client.workername === (worker.worker || 'Unbekannt') &&
-      client.authorised === true &&
-      client.idle !== true
-    );
+  // Aktive Miner zuerst, jeweils nach 5-Sekunden-Hashrate absteigend.
+  const isConnected = (worker) => clients.some(client =>
+    client.workername === (worker.worker || 'Unbekannt') &&
+    client.authorised === true &&
+    client.idle !== true
+  );
 
-    return Number(isConnected(b)) - Number(isConnected(a));
-  });
+  const workerHashrate = (worker) =>
+    Number.isFinite(worker.dsps5) && worker.dsps5 >= 0
+      ? worker.dsps5
+      : 0;
+
+  const sortedWorkers = [...workers].sort((a, b) =>
+    Number(isConnected(b)) - Number(isConnected(a)) ||
+    workerHashrate(b) - workerHashrate(a)
+  );
 
   for (const worker of sortedWorkers) {
     const name = worker.worker || 'Unbekannt';
