@@ -29,24 +29,24 @@ const MINER_COLOR_INACTIVE = '#f59e0b';
 // FORMATIERUNGEN
 // =========================================================
 
+let poolUptimeAnchor = null;
+
 function formatPoolUptime(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '—';
+  const total = Math.floor(seconds);
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  return `${days} ${days === 1 ? 'Tag' : 'Tage'} ` +
+    [hours, minutes, secs].map(n => String(n).padStart(2, '0')).join(':');
+}
 
-  const totalMinutes = Math.floor(seconds / 60);
-  const days = Math.floor(totalMinutes / 1440);
-  const hours = Math.floor((totalMinutes % 1440) / 60);
-  const minutes = totalMinutes % 60;
-
-  if (days > 0) {
-    return `${days} ${days === 1 ? 'Tag' : 'Tage'} ` +
-           `${hours} Std. ${String(minutes).padStart(2, '0')} Min.`;
-  }
-
-  if (hours > 0) {
-    return `${hours} Std. ${String(minutes).padStart(2, '0')} Min.`;
-  }
-
-  return `${minutes} Min.`;
+function tickPoolUptime() {
+  if (poolUptimeAnchor === null) return;
+  const elapsed = Math.max(0, Math.floor((Date.now() - poolUptimeAnchor.at) / 1000));
+  document.getElementById('pool-uptime').textContent =
+    formatPoolUptime(poolUptimeAnchor.seconds + elapsed);
 }
 
 function formatHashrate(ghs) {
@@ -197,7 +197,7 @@ function updateMiners(mining) {
   if (!mining.online) {
     const row = tbody.insertRow();
     const cell = row.insertCell();
-    cell.colSpan = 5;
+    cell.colSpan = 6;
     cell.className = 'empty';
     cell.textContent = 'CKPool ist offline.';
     return;
@@ -256,11 +256,16 @@ function updateMiners(mining) {
       ? formatBestDifficulty(worker.bestdiff)
       : '—';
 
+    const bestEver = Number.isFinite(worker.bestever)
+      ? formatBestDifficulty(worker.bestever)
+      : '—';
+
     const row = tbody.insertRow();
 
     row.insertCell().textContent = name;
     row.insertCell().textContent = formatHashrate(ghs);
     row.insertCell().textContent = bestDiff;
+    row.insertCell().textContent = bestEver;
     row.insertCell().textContent = formatLastShare(worker.lastshare);
 
     // =====================================================
@@ -289,7 +294,7 @@ function updateMiners(mining) {
   if (visibleMiners === 0) {
     const row = tbody.insertRow();
     const cell = row.insertCell();
-    cell.colSpan = 5;
+    cell.colSpan = 6;
     cell.className = 'empty';
     cell.textContent =
       'Keine aktiven Miner oder Miner mit Shares innerhalb der letzten 48 Stunden.';
@@ -373,8 +378,11 @@ async function updateStatus() {
       ? formatHashrate(mining.hashrate)
       : '—';
 
-    $('pool-uptime').textContent = mining.online
-      ? formatPoolUptime(mining.uptime)
+    poolUptimeAnchor = mining.online && Number.isFinite(mining.uptime)
+      ? { seconds: mining.uptime, at: Date.now() }
+      : null;
+    $('pool-uptime').textContent = poolUptimeAnchor
+      ? formatPoolUptime(poolUptimeAnchor.seconds)
       : '—';
 
     // Aktive Miner und Stratum-Verbindungen getrennt zaehlen.
@@ -436,9 +444,7 @@ async function updateStatus() {
 
     $('node-error').textContent = node.error
       ? `BCHN-Abfrage fehlgeschlagen: ${node.error}`
-      : mining.online
-        ? 'CKPool ist online und liefert Mining-Daten.'
-        : 'CKPool ist derzeit offline.';
+      : '';
 
     $('updated').textContent =
       `Letztes Update: ${new Date(data.updated_at).toLocaleTimeString('de-DE')}`;
@@ -460,6 +466,7 @@ async function updateStatus() {
 
 updateStatus();
 setInterval(updateStatus, 5000);
+setInterval(tickPoolUptime, 1000);
 updateBchPrice();
 setInterval(updateBchPrice, 120000);
 
@@ -567,4 +574,3 @@ async function updateBlocks() {
 // Blockhistorie separat alle 60 Sekunden aktualisieren
 updateBlocks();
 setInterval(updateBlocks, 60000);
-
