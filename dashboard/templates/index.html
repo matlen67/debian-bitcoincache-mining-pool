@@ -87,6 +87,81 @@
     .miner-table-scroll::-webkit-scrollbar-thumb:hover {
       background: #496589;
     }
+
+    /* Worker-Tabelle: kompakte Miner-Namen */
+    .miner-table-scroll th:first-child,
+    .miner-table-scroll td:first-child {
+      width: 19%;
+      max-width: 180px;
+      overflow-wrap: anywhere;
+    }
+
+    .miner-table-scroll th:nth-child(3),
+    .miner-table-scroll th:nth-child(4),
+    .miner-table-scroll td:nth-child(3),
+    .miner-table-scroll td:nth-child(4) {
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+  
+    /* Miner-Tabelle: volle Adressen, kompakte Spalten */
+    .miner-table-scroll {
+      overflow-x: auto;
+    }
+
+    .miner-table-scroll table {
+      width: 100%;
+      min-width: 1100px;
+      table-layout: fixed;
+    }
+
+    .miner-table-scroll th,
+    .miner-table-scroll td {
+      box-sizing: border-box;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .miner-table-scroll th:nth-child(1),
+    .miner-table-scroll td:nth-child(1) {
+      width: 38%;
+      max-width: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      overflow-wrap: normal;
+    }
+
+    .miner-table-scroll th:nth-child(2),
+    .miner-table-scroll td:nth-child(2) {
+      width: 12%;
+      white-space: nowrap;
+    }
+
+    .miner-table-scroll th:nth-child(3),
+    .miner-table-scroll td:nth-child(3) {
+      width: 12%;
+      white-space: nowrap;
+    }
+
+    .miner-table-scroll th:nth-child(4),
+    .miner-table-scroll td:nth-child(4) {
+      width: 11%;
+      white-space: nowrap;
+    }
+
+    .miner-table-scroll th:nth-child(5),
+    .miner-table-scroll td:nth-child(5) {
+      width: 19%;
+      white-space: nowrap;
+    }
+
+    .miner-table-scroll th:nth-child(6),
+    .miner-table-scroll td:nth-child(6) {
+      width: 8%;
+      white-space: nowrap;
+    }
+
   </style>
 </head>
 
@@ -110,7 +185,7 @@
       <article class="panel metric">
         <div class="label">Pool-Hashrate</div>
         <div class="value" id="hashrate">—</div>
-        <small>Live-Daten von CKPool</small>
+        
       </article>
 
 
@@ -118,20 +193,20 @@
       <article class="panel metric">
         <div class="label">Pool-Uptime</div>
         <div class="value" id="pool-uptime">—</div>
-        <small>Laufzeit seit letztem CKPool-Start</small>
+        
       </article>
 
       <article class="panel metric">
         <div class="label">Akzeptierte Difficulty</div>
         <div class="value" id="accepted">—</div>
-        <small>Live-Daten von CKPool</small>
+        
       </article>
 
       <article class="panel metric">
         <div class="label">BCH-Netzwerk</div>
         <div class="network-metric-row"><span class="label">Netzwerk-Hashrate</span><strong id="network-hashrate">—</strong></div>
         <div class="network-metric-row"><span class="label">BCH-Kurs</span><strong id="bch-price-eur">—</strong></div>
-        <small>Hashrate geschätzt · Kurs: CoinGecko</small>
+        
       </article>
 
     </section>
@@ -156,13 +231,13 @@
         </div>
 
         <div class="blockheight">
-          <span>Netzwerk-Difficulty</span>
-          <strong id="network-difficulty">—</strong>
-        </div>
-
-        <div class="blockheight">
           <span>Verbundene Peers</span>
           <strong id="peers">—</strong>
+        </div>
+		
+		<div class="blockheight">
+          <span>Netzwerk-Difficulty</span>
+          <strong id="network-difficulty">—</strong>
         </div>
 
         <div class="progress-heading">
@@ -174,9 +249,7 @@
           <div class="progress-bar" id="progress-bar"></div>
         </div>
 
-        <p class="hint">
-          Der Verifikationsfortschritt ist nicht identisch mit Blöcke ÷ Header.
-        </p>
+        
       </article>
 
       <article class="panel">
@@ -231,6 +304,7 @@
               <th>Miner</th>
               <th>Hashrate</th>
               <th>Best Difficulty</th>
+              <th>Best Ever</th>
               <th>Letzte Aktivität</th>
               <th>Status</th>
             </tr>
@@ -238,7 +312,7 @@
 
           <tbody id="miner-rows">
             <tr>
-              <td colspan="5" class="empty">
+              <td colspan="6" class="empty">
                 Noch keine CKPool-Miner-Daten verfügbar.
               </td>
             </tr>
